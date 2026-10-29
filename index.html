@@ -105,15 +105,15 @@ input[type=time]{font-family:var(--mono)}
 .grid2 label,.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
 .prow{display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;align-items:end}
 .prow button{height:42px;padding:0}
-.jrow{display:grid;grid-template-columns:1fr 90px 44px;gap:8px;align-items:end;padding-bottom:10px;border-bottom:1px dashed var(--line)}
-.jrow .desc{grid-column:1/3}
-.jrow .bcbox{grid-column:3}
+.jrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 80px 44px;gap:8px;align-items:end;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.jrow .desc{grid-column:1/4}
+.jrow .bcbox{grid-column:4}
 .jrow button{height:42px;padding:0}
 tr.has-jobs td{border-bottom:none}
 tr.jobtr td{padding-top:0;padding-bottom:8px}
-.jobs{display:grid;grid-template-columns:auto auto auto;justify-content:start;gap:2px 14px;max-width:100%;font-family:var(--body);font-size:.78rem;color:var(--muted);font-weight:500;white-space:normal;line-height:1.35;text-align:left}
+.jobs{display:grid;grid-template-columns:auto auto auto auto;justify-content:start;gap:2px 14px;max-width:100%;font-family:var(--body);font-size:.78rem;color:var(--muted);font-weight:500;white-space:normal;line-height:1.35;text-align:left}
 .jobs .job{display:contents}
-.jobs .jn{font-family:var(--mono)}
+.jobs .jn,.jobs .jp{font-family:var(--mono)}
 .jobs .job>span{cursor:pointer;padding:1px 0}
 .jobs .job.nobc>span{color:var(--warn)}
 .jobs .job.bc>span{color:var(--plus)}
@@ -183,7 +183,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <div><span class="label">+/- i dag</span><span class="v" id="sDiff">0,00</span></div>
     </div>
     <div class="chips" id="absChips" aria-label="Fravær i dag"></div>
-    <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider og jobnumre i dag</button></div>
+    <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider og ordrer i dag</button></div>
   </section>
 
   <section class="saldo" aria-label="Saldi i dag">
@@ -214,13 +214,13 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="muted" style="font-size:.85rem;margin:10px 0 0">Tryk på en dag for at rette tider, pauser, jobnumre eller fravær.</p>
-    <div class="legend" id="bcLegend" hidden><span class="bc">✓ Registreret i BC</span><span class="nobc">○ Mangler i BC</span><span class="muted">Tryk på et job for at skifte</span></div>
+    <p class="muted" style="font-size:.85rem;margin:10px 0 0">Tryk på en dag for at rette tider, pauser, ordrer eller fravær.</p>
+    <div class="legend" id="bcLegend" hidden><span class="bc">✓ Registreret i BC</span><span class="nobc">○ Mangler i BC</span><span class="muted">Tryk på en ordre for at skifte</span></div>
     <div id="jobBox" hidden>
-      <h3 class="label" style="margin:18px 0 0">Timer pr. jobnummer</h3>
+      <h3 class="label" style="margin:18px 0 0">Timer pr. ordre nr.</h3>
       <div class="jobsum" id="jobSum"></div>
       <button class="link" id="allBc" hidden style="margin-top:8px">Markér alle som registreret i BC</button>
-      <div class="notice" id="allBcConfirm" hidden style="margin-top:8px">Markér alle job i perioden som registreret i BC? <button type="button" id="allBcYes" style="margin-left:8px">Ja, markér</button></div>
+      <div class="notice" id="allBcConfirm" hidden style="margin-top:8px">Markér alle ordrer i perioden som registreret i BC? <button type="button" id="allBcYes" style="margin-left:8px">Ja, markér</button></div>
     </div>
   </section>
 
@@ -273,8 +273,8 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <li><b>Pause:</b> Tryk <b>Start pause</b> og <b>Slut pause</b>. Du kan holde flere pauser.</li>
         <li><b>Går hjem:</b> Tryk <b>Stempl ud</b>. Kommer du til at trykke for tidligt, så tryk <b>Fortryd udstempling</b>.</li>
         <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie og feriefridage trækkes fra feriesaldoen, afspadsering fra flexsaldoen.</li>
-        <li><b>Jobnumre:</b> Tryk <b>Ret tider og jobnumre i dag</b> og <b>+ Tilføj jobnummer</b>. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; den huskes til næste gang, du bruger samme jobnummer.</li>
-        <li><b>Microsoft BC:</b> Job, der mangler i BC, er orange med ○. Tryk på jobbet i periodeoversigten, når du har registreret det i BC, så bliver det grønt med ✓.</li>
+        <li><b>Ordrer:</b> Tryk <b>Ret tider og ordrer i dag</b> og <b>+ Tilføj ordre</b>. Skriv ordre nr., evt. PO nr. og timer. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; PO nr. og beskrivelse huskes til næste gang, du bruger samme ordre nr.</li>
+        <li><b>Microsoft BC:</b> Ordrer, der mangler i BC, er orange med ○. Tryk på ordren i periodeoversigten, når du har registreret det i BC, så bliver det grønt med ✓.</li>
         <li><b>Glemt at stemple:</b> Tryk på dagen i periodeoversigten, og ret tiderne.</li>
       </ul>
       <h3>Efter den 20. hver måned</h3>
@@ -302,9 +302,9 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <button type="button" class="link" id="addP">+ Tilføj pause</button>
     </div>
     <div>
-      <div class="label" style="margin-bottom:6px">Jobnumre</div>
+      <div class="label" style="margin-bottom:6px">Ordrer</div>
       <div id="jList" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="row" style="justify-content:space-between"><button type="button" class="link" id="addJ">+ Tilføj jobnummer</button><span class="muted alloc" id="alloc"></span></div>
+      <div class="row" style="justify-content:space-between"><button type="button" class="link" id="addJ">+ Tilføj ordre</button><span class="muted alloc" id="alloc"></span></div>
       <datalist id="jobOpts"></datalist>
     </div>
     <label class="field" for="fAbs">Fravær
@@ -384,14 +384,14 @@ function normalize(d){
   const o={};
   if(d.ind)o.ind=d.ind; if(d.ud)o.ud=d.ud;
   const p=(d.pauser||[]).filter(x=>x.fra);if(p.length)o.pauser=p.map(x=>x.til?{fra:x.fra,til:x.til}:{fra:x.fra});
-  const j=(d.jobs||[]).filter(x=>x.nr&&x.nr.trim()).map(x=>{const o={nr:x.nr.trim(),t:Math.round((Number(x.t)||0)*100)/100};const b=(x.b||"").trim();if(b)o.b=b;if(x.bc)o.bc=true;return o});if(j.length)o.jobs=j;
+  const j=(d.jobs||[]).filter(x=>x.nr&&x.nr.trim()).map(x=>{const o={nr:x.nr.trim(),t:Math.round((Number(x.t)||0)*100)/100};const po=(x.po||"").trim();if(po)o.po=po;const b=(x.b||"").trim();if(b)o.b=b;if(x.bc)o.bc=true;return o});if(j.length)o.jobs=j;
   if(d.fravaer)o.fravaer=d.fravaer; if(d.note)o.note=d.note;
   return Object.keys(o).length?o:null;
 }
 
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const parseH=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)&&n>=0?n:0};
-const jobText=(d,k)=>(d.jobs||[]).map((j,i)=>`<span class="job ${j.bc?"bc":"nobc"}" data-k="${k}" data-i="${i}" title="${j.bc?"Registreret i BC – tryk for at fjerne markering":"Ikke registreret i BC – tryk når den er registreret"}"><span class="jn">${esc(j.nr)}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
+const jobText=(d,k)=>(d.jobs||[]).map((j,i)=>`<span class="job ${j.bc?"bc":"nobc"}" data-k="${k}" data-i="${i}" title="${j.bc?"Registreret i BC – tryk for at fjerne markering":"Ikke registreret i BC – tryk når den er registreret"}"><span class="jn">${esc(j.nr)}</span><span class="jp">${j.po?esc(j.po):""}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
 
 // ---------- stamping ----------
 function stamp(action){
@@ -449,14 +449,14 @@ function renderPeriod(){
   const p=state.period;
   $("perTitle").textContent=`${MONTHS[p.end.getMonth()][0].toUpperCase()+MONTHS[p.end.getMonth()].slice(1)} ${p.end.getFullYear()}`;
   $("perRange").textContent=`${pad(p.start.getDate())}.${pad(p.start.getMonth()+1)}.${p.start.getFullYear()} – ${pad(p.end.getDate())}.${pad(p.end.getMonth()+1)}.${p.end.getFullYear()}`;
-  const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const jobTot={};const jobDesc={};const jobMiss={};const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
+  const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const jobTot={};const jobDesc={};const jobPo={};const jobMiss={};const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
   for(const k of periodDays()){
     const d=state.days[k]||(k===tk?state.today:null)||{};const c=calc(k,d);const dt=parseKey(k);const we=c.norm===0;
     if(c.diff!=null&&!c.open)tD+=c.diff; if(c.abs)tA+=c.abs; if(c.work)tW+=c.work;
     const pTxt=c.pause?fmt(c.pause):"";
     const diffCell=c.missing?`<span class="miss">mangler ud</span>`:c.open?`<span class="tag" style="color:var(--plus)">i gang</span>`:(c.diff!=null&&Math.abs(c.diff)>=0.005?`<span class="${c.diff>0?"plus":"minus"}">${fmt(c.diff,true)}</span>`:"");
     const tag=d.fravaer?` <span class="tag">${d.fravaer}${c.abs?" "+fmt(c.abs):""}</span>`:"";
-    for(const j of d.jobs||[]){jobTot[j.nr]=(jobTot[j.nr]||0)+j.t;if(j.b)jobDesc[j.nr]=j.b;if(!j.bc)jobMiss[j.nr]=(jobMiss[j.nr]||0)+j.t}
+    for(const j of d.jobs||[]){jobTot[j.nr]=(jobTot[j.nr]||0)+j.t;if(j.b)jobDesc[j.nr]=j.b;if(j.po)jobPo[j.nr]=j.po;if(!j.bc)jobMiss[j.nr]=(jobMiss[j.nr]||0)+j.t}
     rows.push(`<tr data-date="${k}" class="${we?"we":""} ${k===tk?"today":""} ${d.jobs?"has-jobs":""}"><td class="d">${DAYS[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}${tag}</td><td>${d.ind||""}</td><td>${d.ud||""}</td><td>${pTxt}</td><td>${c.work!=null?fmt(c.work):""}</td><td>${diffCell}</td></tr>`+(d.jobs?`<tr data-date="${k}" class="jobtr ${we?"we":""}"><td colspan="6"><span class="jobs">${jobText(d,k)}</span></td></tr>`:""));
     const dd=(c.diff!=null&&!c.open&&Math.abs(c.diff)>=0.005)?c.diff:null;
     if(dd!=null||c.abs)formLines.push(`${pad(dt.getDate())}-${pad(dt.getMonth()+1)}-${String(dt.getFullYear()).slice(2)}  ${DAYS_LONG[dt.getDay()].padEnd(8)} ${(dd!=null?fmt(dd):"").padStart(7)}  ${(c.abs?fmt(c.abs):"").padStart(7)}${d.fravaer?"  "+d.fravaer:""}`);
@@ -466,7 +466,7 @@ function renderPeriod(){
   const jt=Object.entries(jobTot).sort((a,b)=>b[1]-a[1]);
   $("jobBox").hidden=!jt.length;$("bcLegend").hidden=!jt.length;
   const missTot=Object.values(jobMiss).reduce((a,b)=>a+b,0);$("allBc").hidden=!missTot;
-  $("jobSum").innerHTML=jt.map(([n,h])=>`<div><span class="n">${esc(n)}${jobDesc[n]?`<small>${esc(jobDesc[n])}</small>`:""}</span><span class="h">${fmt(h)} t${jobMiss[n]?`<span class="miss">${fmt(jobMiss[n])} t mangler i BC</span>`:""}</span></div>`).join("")+(jt.length?`<div><span class="muted">I alt fordelt</span><span class="h">${fmt(jt.reduce((a,b)=>a+b[1],0))} af ${fmt(tW)} t</span></div>`:"");
+  $("jobSum").innerHTML=jt.map(([n,h])=>`<div><span class="n">${esc(n)}${jobPo[n]||jobDesc[n]?`<small>${[jobPo[n]?"PO "+esc(jobPo[n]):"",jobDesc[n]?esc(jobDesc[n]):""].filter(Boolean).join(" · ")}</small>`:""}</span><span class="h">${fmt(h)} t${jobMiss[n]?`<span class="miss">${fmt(jobMiss[n])} t mangler i BC</span>`:""}</span></div>`).join("")+(jt.length?`<div><span class="muted">I alt fordelt</span><span class="h">${fmt(jt.reduce((a,b)=>a+b[1],0))} af ${fmt(tW)} t</span></div>`:"");
   $("tDiff").textContent=fmt(tD,true);$("tDiff").className="v "+(tD>0.004?"plus":tD<-0.004?"minus":"");
   $("tAbs").textContent=fmt(tA);$("tWork").textContent=fmt(tW);
   const head="Dato      Dag       Arb.tid  Ikke på arb.";
@@ -531,17 +531,24 @@ function formWork(){
   return Math.max(0,outM-inM-p)/60;
 }
 function updAlloc(){
-  const w=formWork();const sum=[...$("jList").children].reduce((a,r)=>a+parseH(r.querySelectorAll("input")[1].value),0);
+  const w=formWork();const sum=[...$("jList").children].reduce((a,r)=>a+parseH(r.querySelector(".j-t").value),0);
   $("alloc").textContent=sum||w!=null?`Fordelt ${fmt(sum)}${w!=null?" af "+fmt(w):""} t`:"";
 }
 function jRow(j={}){
   const div=document.createElement("div");div.className="jrow";const i=$("jList").children.length;
-  let t=j.t;if(t==null){const w=formWork();const used=[...$("jList").children].reduce((a,r)=>a+parseH(r.querySelectorAll("input")[1].value),0);t=w!=null?Math.max(0,Math.round((w-used)*100)/100):""}
-  div.innerHTML=`<label class="field" for="jn${i}">Jobnr.<input id="jn${i}" list="jobOpts" autocomplete="off" maxlength="40" value="${esc(j.nr||"")}"></label><label class="field" for="jt${i}">Timer<input id="jt${i}" class="num" inputmode="decimal" value="${t===""?"":String(t).replace(".",",")}"></label><button type="button" aria-label="Fjern jobnummer">✕</button><label class="field desc" for="jb${i}">Beskrivelse<input id="jb${i}" maxlength="120" placeholder="Valgfri" value="${esc(j.b||"")}"></label><label class="bcbox" for="jc${i}"><input type="checkbox" id="jc${i}" ${j.bc?"checked":""}>BC</label>`;
+  let t=j.t;if(t==null){const w=formWork();const used=[...$("jList").children].reduce((a,r)=>a+parseH(r.querySelector(".j-t").value),0);t=w!=null?Math.max(0,Math.round((w-used)*100)/100):""}
+  div.innerHTML=`<label class="field" for="jn${i}">Ordre nr.<input id="jn${i}" class="j-nr" list="jobOpts" autocomplete="off" maxlength="40" value="${esc(j.nr||"")}"></label><label class="field" for="jp${i}">PO nr.<input id="jp${i}" class="j-po" autocomplete="off" maxlength="40" value="${esc(j.po||"")}"></label><label class="field" for="jt${i}">Timer<input id="jt${i}" class="num j-t" inputmode="decimal" value="${t===""?"":String(t).replace(".",",")}"></label><button type="button" aria-label="Fjern ordre">✕</button><label class="field desc" for="jb${i}">Beskrivelse<input id="jb${i}" class="j-b" maxlength="120" placeholder="Valgfri" value="${esc(j.b||"")}"></label><label class="bcbox" for="jc${i}"><input type="checkbox" id="jc${i}" ${j.bc?"checked":""}>BC</label>`;
   div.querySelector("button").onclick=()=>{div.remove();updAlloc()};
-  const [nrIn,,bIn]=div.querySelectorAll("input");
-  nrIn.addEventListener("change",()=>{if(!bIn.value.trim()){const last=lastDesc(nrIn.value.trim());if(last)bIn.value=last}});
+  const nrIn=div.querySelector(".j-nr"),poIn=div.querySelector(".j-po"),bIn=div.querySelector(".j-b");
+  nrIn.addEventListener("change",()=>{const nr=nrIn.value.trim();
+    if(!bIn.value.trim()){const last=lastDesc(nr);if(last)bIn.value=last}
+    if(!poIn.value.trim()){const lp=lastPo(nr);if(lp)poIn.value=lp}});
   div.addEventListener("input",updAlloc);$("jList").append(div);updAlloc();return div;
+}
+function lastPo(nr){
+  if(!nr)return "";
+  for(const k of Object.keys(state.days).sort().reverse())for(const j of state.days[k].jobs||[])if(j.nr===nr&&j.po)return j.po;
+  return "";
 }
 function lastDesc(nr){
   if(!nr)return "";
@@ -577,7 +584,7 @@ $("dlgForm").addEventListener("submit",e=>{
   const pauser=[...$("pList").children].map(r=>{const [a,b]=r.querySelectorAll("input");return{fra:a.value,til:b.value}}).filter(p=>p.fra);
   const inM=toMin($("fIn").value),outM=toMin($("fOut").value);
   if(inM!=null&&outM!=null&&outM<=inM){toast("Gået hjem skal være efter mødt ind");return}
-  const jobs=[...$("jList").children].map(r=>{const [a,b,c]=r.querySelectorAll("input");const cb=r.querySelector("input[type=checkbox]");return{nr:a.value,t:parseH(b.value),b:c.value,bc:cb&&cb.checked}}).filter(j=>j.nr.trim());
+  const jobs=[...$("jList").children].map(r=>{const q=c=>r.querySelector(c);const cb=q("input[type=checkbox]");return{nr:q(".j-nr").value,po:q(".j-po").value,t:parseH(q(".j-t").value),b:q(".j-b").value,bc:cb&&cb.checked}}).filter(j=>j.nr.trim());
   setDay(state.editing,{ind:$("fIn").value,ud:$("fOut").value,pauser,jobs,fravaer:$("fAbs").value,note:$("fNote").value.trim()});
   toast("Gemt");closeDlg();
 });
