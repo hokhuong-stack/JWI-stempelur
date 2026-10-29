@@ -87,6 +87,7 @@ tr.we td{color:var(--muted);background:var(--sunk)}
 tr.today td.d{font-weight:600;color:var(--accent)}
 tr[data-date]{cursor:pointer}
 tr[data-date]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.hol{font-family:var(--body);font-size:.75rem;font-weight:600;color:var(--accent)}
 .tag{font-family:var(--body);font-size:.75rem;font-weight:600;color:var(--warn)}
 .miss{color:var(--minus);font-family:var(--body);font-size:.75rem;font-weight:600}
 .form{white-space:pre;font-family:var(--mono);font-size:.85rem;background:var(--sunk);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0}
@@ -140,6 +141,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 .jobsum .h{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .alloc{font-size:.85rem}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;z-index:30}
+.unsaved{background:var(--pause-bg);color:var(--fg);border:1px solid var(--pause);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
 .notice{background:var(--pause-bg);color:var(--pause);border-radius:8px;padding:10px 12px;font-size:.9rem}
 @media (max-width:420px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.norm{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){th:nth-child(4),td:nth-child(4){display:none}table{font-size:.86rem}td,th{padding-left:3px;padding-right:3px}}
@@ -195,12 +197,12 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 
   <section class="card" aria-labelledby="perTitle">
     <div class="period-head">
-      <button id="prev" aria-label="Forrige periode">‹</button>
+      <button id="prev" aria-label="Forrige måned">‹</button>
       <div class="mid">
         <h2 id="perTitle">Periode</h2>
         <div class="muted num" id="perRange"></div>
       </div>
-      <button id="next" aria-label="Næste periode">›</button>
+      <button id="next" aria-label="Næste måned">›</button>
     </div>
     <div class="totals">
       <div><span class="label">+/- timer</span><span class="v" id="tDiff">0,00</span></div>
@@ -220,13 +222,14 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <h3 class="label" style="margin:18px 0 0">Timer pr. ordre nr.</h3>
       <div class="jobsum" id="jobSum"></div>
       <button class="link" id="allBc" hidden style="margin-top:8px">Markér alle som registreret i BC</button>
-      <div class="notice" id="allBcConfirm" hidden style="margin-top:8px">Markér alle ordrer i perioden som registreret i BC? <button type="button" id="allBcYes" style="margin-left:8px">Ja, markér</button></div>
+      <div class="notice" id="allBcConfirm" hidden style="margin-top:8px">Markér alle ordrer i måneden som registreret i BC? <button type="button" id="allBcYes" style="margin-left:8px">Ja, markér</button></div>
     </div>
   </section>
 
   <section class="card" aria-labelledby="formTitle">
     <h2 id="formTitle">Til arbejdstidsskemaet</h2>
     <p class="muted" style="margin:4px 0 0;font-size:.9rem">Kun dage med afvigelse fra normtiden. Samme kolonner som skemaet: <i>Arbejdstid (i timer)</i> og <i>Ikke på arb.</i></p>
+    <p class="num" id="formRange" style="margin:8px 0 0;font-size:.85rem;color:var(--muted)"></p>
     <div class="form" id="formText"></div>
     <div class="row">
       <button id="copyForm">Kopiér tekst</button>
@@ -275,6 +278,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie og feriefridage trækkes fra feriesaldoen, afspadsering fra flexsaldoen.</li>
         <li><b>Ordrer:</b> Tryk <b>Ret tider og ordrer i dag</b> og <b>+ Tilføj ordre</b>. Skriv ordre nr., evt. PO nr. og timer. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; PO nr. og beskrivelse huskes til næste gang, du bruger samme ordre nr.</li>
         <li><b>Microsoft BC:</b> Ordrer, der mangler i BC, er orange med ○. Tryk på ordren i periodeoversigten, når du har registreret det i BC, så bliver det grønt med ✓.</li>
+        <li><b>Helligdage:</b> Danske helligdage, Grundlovsdag og juleaften har normtid 0. Arbejder du på en helligdag, tæller alle timerne som plus.</li>
         <li><b>Glemt at stemple:</b> Tryk på dagen i periodeoversigten, og ret tiderne.</li>
       </ul>
       <h3>Efter den 20. hver måned</h3>
@@ -315,6 +319,10 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <button type="button" class="ghost" id="delDay">Ryd dagen</button>
       <div class="row"><button type="button" id="cancel">Annuller</button><button type="submit" class="go">Gem</button></div>
     </div>
+    <div class="unsaved" id="unsaved" hidden role="alertdialog" aria-labelledby="unsavedTxt">
+      <span id="unsavedTxt"><b>Du har ændringer, der ikke er gemt.</b> Vil du gemme dem?</span>
+      <div class="row"><button type="button" class="go" id="usSave">Gem</button><button type="button" id="usDiscard">Annuller ændringer</button><button type="button" class="link" id="usBack">Fortsæt redigering</button></div>
+    </div>
     <div class="notice" id="confirmDel" hidden>Vil du rydde alle tider for dagen? <button type="button" id="confirmDelYes" style="margin-left:8px">Ja, ryd</button></div>
   </form>
 </div>
@@ -343,7 +351,20 @@ const fmt=(h,sign)=>{if(h==null)return"";const r=Math.round(h*100)/100;const s=M
 // period that ends on the 20th of month m (0-based) in year y
 function periodFor(y,m){return{y,m,start:new Date(y,m-1,21),end:new Date(y,m,20)}}
 function periodOf(d){return d.getDate()>20?periodFor(d.getFullYear(),d.getMonth()+1):periodFor(d.getFullYear(),d.getMonth())}
-function normOf(k){const wd=parseKey(k).getDay();return Number(state.norm[wd]||0)}
+// Danske helligdage (norm 0). Store bededag er afskaffet fra 2024.
+const _hol={};
+function holidays(y){
+  if(_hol[y])return _hol[y];
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  const E=new Date(y,mo-1,da),off=(n)=>{const t=new Date(E);t.setDate(t.getDate()+n);return key(t)};
+  return _hol[y]={[`${y}-01-01`]:"Nytårsdag",[off(-3)]:"Skærtorsdag",[off(-2)]:"Langfredag",[off(0)]:"Påskedag",[off(1)]:"2. påskedag",
+    [off(39)]:"Kr. himmelfartsdag",[off(49)]:"Pinsedag",[off(50)]:"2. pinsedag",[`${y}-06-05`]:"Grundlovsdag",
+    [`${y}-12-24`]:"Juleaften",[`${y}-12-25`]:"Juledag",[`${y}-12-26`]:"2. juledag"};
+}
+const holidayName=k=>holidays(+k.slice(0,4))[k]||"";
+function normOf(k){if(holidayName(k))return 0;const wd=parseKey(k).getDay();return Number(state.norm[wd]||0)}
 
 // minutes worked & paused for a day; live when it's today and still open
 function calc(k,day){
@@ -417,7 +438,7 @@ function setAbs(v){
 function renderToday(){
   const now=new Date(),k=key(now),d=state.today||{};
   $("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  $("todayDate").textContent=`${DAYS_LONG[now.getDay()]} ${now.getDate()}. ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  $("todayDate").textContent=`${DAYS_LONG[now.getDay()]} ${now.getDate()}. ${MONTHS[now.getMonth()]} ${now.getFullYear()}${holidayName(k)?" · "+holidayName(k):""}`;
   const openP=(d.pauser||[]).find(p=>!p.til);
   let st,cls,btns;
   if(d.fravaer&&!d.ind){st=d.fravaer;cls="abs";btns=[["in","Stempl ind","go big wide"]]}
@@ -445,21 +466,28 @@ function renderToday(){
   $("absChips").replaceChildren(...ABS.map(a=>{const b=document.createElement("button");b.className="chip";b.textContent=a;b.setAttribute("aria-pressed",d.fravaer===a?"true":"false");b.disabled=!state.canWrite||!state.uid;b.onclick=()=>setAbs(a);return b}));
 }
 
+function monthDays(){const e=state.period.end;const out=[];for(let d=new Date(e.getFullYear(),e.getMonth(),1);d.getMonth()===e.getMonth();d.setDate(d.getDate()+1))out.push(key(d));return out}
+const dmy=d=>`${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
 function periodDays(){const out=[];const p=state.period;for(let d=new Date(p.start);d<=p.end;d.setDate(d.getDate()+1))out.push(key(d));return out}
 
 function renderPeriod(){
   const p=state.period;
   $("perTitle").textContent=`${MONTHS[p.end.getMonth()][0].toUpperCase()+MONTHS[p.end.getMonth()].slice(1)} ${p.end.getFullYear()}`;
-  $("perRange").textContent=`${pad(p.start.getDate())}.${pad(p.start.getMonth()+1)}.${p.start.getFullYear()} – ${pad(p.end.getDate())}.${pad(p.end.getMonth()+1)}.${p.end.getFullYear()}`;
+  const ms=new Date(p.end.getFullYear(),p.end.getMonth(),1),me=new Date(p.end.getFullYear(),p.end.getMonth()+1,0);
+  $("perRange").textContent=`${dmy(ms)} – ${dmy(me)}`;
+  $("formRange").textContent=`Skemaperiode: ${dmy(p.start)} – ${dmy(p.end)}`;
   const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const jobTot={};const jobDesc={};const jobPo={};const jobNr={};const jobMiss={};const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
-  for(const k of periodDays()){
+  for(const k of monthDays()){
     const d=state.days[k]||(k===tk?state.today:null)||{};const c=calc(k,d);const dt=parseKey(k);const we=c.norm===0;
     if(c.diff!=null&&!c.open)tD+=c.diff; if(c.abs)tA+=c.abs; if(c.work)tW+=c.work;
     const pTxt=c.pause?fmt(c.pause):"";
     const diffCell=c.missing?`<span class="miss">mangler ud</span>`:c.open?`<span class="tag" style="color:var(--plus)">i gang</span>`:(c.diff!=null&&Math.abs(c.diff)>=0.005?`<span class="${c.diff>0?"plus":"minus"}">${fmt(c.diff,true)}</span>`:"");
-    const tag=d.fravaer?` <span class="tag">${d.fravaer}${c.abs?" "+fmt(c.abs):""}</span>`:"";
+    const hn=holidayName(k);const tag=(hn?` <span class="hol">${hn}</span>`:"")+(d.fravaer?` <span class="tag">${d.fravaer}${c.abs?" "+fmt(c.abs):""}</span>`:"");
     for(const j of d.jobs||[]){const g=jobKey(j);jobTot[g]=(jobTot[g]||0)+j.t;if(j.b)jobDesc[g]=j.b;if(j.po)jobPo[g]=j.po;if(j.nr)jobNr[g]=j.nr;if(!j.bc)jobMiss[g]=(jobMiss[g]||0)+j.t}
     rows.push(`<tr data-date="${k}" class="${we?"we":""} ${k===tk?"today":""} ${d.jobs?"has-jobs":""}"><td class="d">${DAYS[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}${tag}</td><td>${d.ind||""}</td><td>${d.ud||""}</td><td>${pTxt}</td><td>${c.work!=null?fmt(c.work):""}</td><td>${diffCell}</td></tr>`+(d.jobs?`<tr data-date="${k}" class="jobtr ${we?"we":""}"><td colspan="6"><span class="jobs">${jobText(d,k)}</span></td></tr>`:""));
+  }
+  for(const k of periodDays()){
+    const d=state.days[k]||(k===tk?state.today:null)||{};const c=calc(k,d);const dt=parseKey(k);
     const dd=(c.diff!=null&&!c.open&&Math.abs(c.diff)>=0.005)?c.diff:null;
     if(dd!=null||c.abs)formLines.push(`${pad(dt.getDate())}-${pad(dt.getMonth()+1)}-${String(dt.getFullYear()).slice(2)}  ${DAYS_LONG[dt.getDay()].padEnd(8)} ${(dd!=null?fmt(dd):"").padStart(7)}  ${(c.abs?fmt(c.abs):"").padStart(7)}${d.fravaer?"  "+d.fravaer:""}`);
     if(d.ind||d.fravaer||d.note)csv.push([`${pad(dt.getDate())}-${pad(dt.getMonth()+1)}-${dt.getFullYear()}`,DAYS_LONG[dt.getDay()],d.ind||"",d.ud||"",c.pause?fmt(c.pause):"",c.work!=null?fmt(c.work):"",fmt(c.norm),dd!=null?fmt(dd):"",c.abs?fmt(c.abs):"",d.fravaer||"",d.note||""]);
@@ -472,7 +500,7 @@ function renderPeriod(){
   $("tDiff").textContent=fmt(tD,true);$("tDiff").className="v "+(tD>0.004?"plus":tD<-0.004?"minus":"");
   $("tAbs").textContent=fmt(tA);$("tWork").textContent=fmt(tW);
   const head="Dato      Dag       Arb.tid  Ikke på arb.";
-  $("formText").textContent=formLines.length?head+"\n"+formLines.join("\n"):"Ingen afvigelser i perioden endnu.\nNår du stempler mere eller mindre end normtiden, kommer dagen med her.";
+  $("formText").textContent=formLines.length?head+"\n"+formLines.join("\n"):"Ingen afvigelser i skemaperioden endnu.\nNår du stempler mere eller mindre end normtiden, kommer dagen med her.";
   state.csv=csv;
   renderSaldo();
 }
@@ -506,8 +534,8 @@ function renderSaldo(){
   $("balFlex").textContent=fmt(b.flex,true);$("balFlex").className="v "+signCls(b.flex);
   $("balFerie").textContent=fmt(b.ferie);$("balFfri").textContent=fmt(b.ffri);
   $("saldoHint").hidden=!!state.saldo.start;
-  const pe=key(state.period.end);const pb=balances(pe<key(new Date())?pe:key(new Date()));
-  $("perFlex").textContent=state.saldo.start?`Flexsaldo ${pe<key(new Date())?"ved periodens slut":"i dag"}: ${fmt(pb.flex,true)} t`:"";
+  const e=state.period.end;const pe=key(new Date(e.getFullYear(),e.getMonth()+1,0));const pb=balances(pe<key(new Date())?pe:key(new Date()));
+  $("perFlex").textContent=state.saldo.start?`Flexsaldo ${pe<key(new Date())?"ved månedens slut":"i dag"}: ${fmt(pb.flex,true)} t`:"";
 }
 function fillSaldoForm(){
   const sd=state.saldo,f=v=>v===""||v==null?"":String(v).replace(".",",");
@@ -569,16 +597,25 @@ function openDay(k){
   $("fIn").value=d.ind||"";$("fOut").value=d.ud||"";$("fAbs").value=d.fravaer||"";$("fNote").value=d.note||"";
   $("pList").replaceChildren();(d.pauser||[]).forEach(pRow);$("confirmDel").hidden=true;
   $("jList").replaceChildren();fillJobOpts();(d.jobs||[]).forEach(jRow);updAlloc();
-  $("dlg").hidden=false;$("fIn").focus();
+  $("unsaved").hidden=true;$("dlg").hidden=false;state.dlgSnap=formSnap();$("fIn").focus();
 }
-function closeDlg(){$("dlg").hidden=true;state.editing=null}
+function closeDlg(){$("dlg").hidden=true;$("unsaved").hidden=true;state.editing=null}
+function formSnap(){return JSON.stringify([...$("dlgForm").querySelectorAll("input,select")].map(el=>el.type==="checkbox"?el.checked:el.value))}
+function tryClose(){
+  if($("dlg").hidden)return;
+  if(formSnap()===state.dlgSnap){closeDlg();return}
+  $("unsaved").hidden=false;$("unsaved").scrollIntoView({block:"nearest"});$("usSave").focus();
+}
 $("addP").onclick=()=>{pRow();updAlloc()};
 $("addJ").onclick=()=>{jRow().querySelector("input").focus()};
 ["fIn","fOut"].forEach(id=>$(id).addEventListener("input",updAlloc));
 $("pList").addEventListener("input",updAlloc);
 $("cancel").onclick=closeDlg;
-$("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))closeDlg()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dlg").hidden)closeDlg()});
+$("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))tryClose()});
+$("usSave").onclick=()=>$("dlgForm").requestSubmit();
+$("usDiscard").onclick=()=>{closeDlg();toast("Ændringerne blev ikke gemt")};
+$("usBack").onclick=()=>{$("unsaved").hidden=true};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dlg").hidden)tryClose()});
 $("delDay").onclick=()=>{$("confirmDel").hidden=false};
 $("confirmDelYes").onclick=()=>{setDay(state.editing,null);toast("Dagen er ryddet");closeDlg()};
 $("dlgForm").addEventListener("submit",e=>{
@@ -598,7 +635,7 @@ $("rows").addEventListener("click",e=>{
 
 $("allBc").onclick=()=>{$("allBcConfirm").hidden=false};
 $("allBcYes").onclick=()=>{
-  let n=0;for(const k of periodDays()){const d=state.days[k];if(!d||!d.jobs)continue;if(d.jobs.some(j=>!j.bc)){d.jobs.forEach(j=>j.bc=true);n++}}
+  let n=0;for(const k of monthDays()){const d=state.days[k];if(!d||!d.jobs)continue;if(d.jobs.some(j=>!j.bc)){d.jobs.forEach(j=>j.bc=true);n++}}
   save();$("allBcConfirm").hidden=true;renderAll();toast(`Markeret på ${n} dage`);
 };
 
@@ -610,7 +647,7 @@ function normalizePeriod(p){const e=p.end;return periodFor(e.getFullYear(),e.get
 
 // ---------- form export ----------
 $("copyForm").onclick=async()=>{
-  const txt=`${state.name?state.name+" – ":""}${$("perTitle").textContent} (${$("perRange").textContent})\n`+$("formText").textContent;
+  const txt=`${state.name?state.name+" – ":""}${$("formRange").textContent.replace("Skemaperiode: ","")}\n`+$("formText").textContent;
   try{await navigator.clipboard.writeText(txt);toast("Kopieret")}
   catch{const r=document.createRange();r.selectNodeContents($("formText"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Markeret – kopiér med Ctrl+C")}
 };
@@ -680,7 +717,7 @@ function notice(m){$("notice").textContent=m;$("notice").hidden=!m}
 // ---------- boot ----------
 load();
 state.today=state.days[key(new Date())]||null;
-state.period=periodOf(new Date());
+state.period=periodFor(new Date().getFullYear(),new Date().getMonth());
 renderNorm();fillSaldoForm();renderAll();
 if(!storeOk)notice("Browseren tillader ikke at gemme. Brug ikke privat browsing, og åbn siden fra en webadresse.");
 let lastDay=key(new Date());
