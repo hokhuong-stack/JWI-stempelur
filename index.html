@@ -80,7 +80,9 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}
 th{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-td.d{font-family:var(--body)}
+td.d{font-family:var(--body);width:100%}
+th+th,td+td{padding-left:12px}
+tr.jobtr td{width:auto}
 tr.we td{color:var(--muted);background:var(--sunk)}
 tr.today td.d{font-weight:600;color:var(--accent)}
 tr[data-date]{cursor:pointer}
@@ -103,6 +105,22 @@ input[type=time]{font-family:var(--mono)}
 .grid2 label,.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
 .prow{display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;align-items:end}
 .prow button{height:42px;padding:0}
+.jrow{display:grid;grid-template-columns:1fr 90px 44px;gap:8px;align-items:end;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.jrow .desc{grid-column:1/3}
+.jrow button{height:42px;padding:0}
+tr.has-jobs td{border-bottom:none}
+tr.jobtr td{padding-top:0;padding-bottom:8px}
+.jobs{display:grid;grid-template-columns:auto auto auto;justify-content:start;gap:2px 14px;max-width:100%;font-family:var(--body);font-size:.78rem;color:var(--muted);font-weight:500;white-space:normal;line-height:1.35;text-align:left}
+.jobs .job{display:contents}
+.jobs .jn{font-family:var(--mono)}
+.jobs .jd{overflow-wrap:anywhere}
+.jobs .jt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.jobsum{margin:14px 0 0;display:flex;flex-direction:column;gap:0}
+.jobsum div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.jobsum .n small{display:block;font-family:var(--body);font-weight:400;color:var(--muted);font-size:.8rem}
+.jobsum .n{font-family:var(--mono);font-weight:600;min-width:0;overflow-wrap:anywhere}
+.jobsum .h{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.alloc{font-size:.85rem}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;z-index:30}
 .notice{background:var(--pause-bg);color:var(--pause);border-radius:8px;padding:10px 12px;font-size:.9rem}
 @media (max-width:420px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.norm{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -147,7 +165,7 @@ input[type=time]{font-family:var(--mono)}
       <div><span class="label">+/- i dag</span><span class="v" id="sDiff">0,00</span></div>
     </div>
     <div class="chips" id="absChips" aria-label="Fravær i dag"></div>
-    <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider i dag</button></div>
+    <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider og jobnumre i dag</button></div>
   </section>
 
   <section class="card" aria-labelledby="perTitle">
@@ -170,7 +188,11 @@ input[type=time]{font-family:var(--mono)}
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="muted" style="font-size:.85rem;margin:10px 0 0">Tryk på en dag for at rette tider, pauser eller fravær.</p>
+    <p class="muted" style="font-size:.85rem;margin:10px 0 0">Tryk på en dag for at rette tider, pauser, jobnumre eller fravær.</p>
+    <div id="jobBox" hidden>
+      <h3 class="label" style="margin:18px 0 0">Timer pr. jobnummer</h3>
+      <div class="jobsum" id="jobSum"></div>
+    </div>
   </section>
 
   <section class="card" aria-labelledby="formTitle">
@@ -209,6 +231,7 @@ input[type=time]{font-family:var(--mono)}
         <li><b>Pause:</b> Tryk <b>Start pause</b> og <b>Slut pause</b>. Du kan holde flere pauser.</li>
         <li><b>Går hjem:</b> Tryk <b>Stempl ud</b>. Kommer du til at trykke for tidligt, så tryk <b>Fortryd udstempling</b>.</li>
         <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>.</li>
+        <li><b>Jobnumre:</b> Tryk <b>Ret tider og jobnumre i dag</b> og <b>+ Tilføj jobnummer</b>. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; den huskes til næste gang, du bruger samme jobnummer.</li>
         <li><b>Glemt at stemple:</b> Tryk på dagen i periodeoversigten, og ret tiderne.</li>
       </ul>
       <h3>Efter den 20. hver måned</h3>
@@ -234,6 +257,12 @@ input[type=time]{font-family:var(--mono)}
       <div class="label" style="margin-bottom:6px">Pauser</div>
       <div id="pList" style="display:flex;flex-direction:column;gap:8px"></div>
       <button type="button" class="link" id="addP">+ Tilføj pause</button>
+    </div>
+    <div>
+      <div class="label" style="margin-bottom:6px">Jobnumre</div>
+      <div id="jList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="row" style="justify-content:space-between"><button type="button" class="link" id="addJ">+ Tilføj jobnummer</button><span class="muted alloc" id="alloc"></span></div>
+      <datalist id="jobOpts"></datalist>
     </div>
     <label class="field" for="fAbs">Fravær
       <select id="fAbs"><option value="">Intet</option><option>Ferie</option><option>Syg</option><option>Afspadsering</option><option>Fri</option></select>
@@ -311,9 +340,14 @@ function normalize(d){
   const o={};
   if(d.ind)o.ind=d.ind; if(d.ud)o.ud=d.ud;
   const p=(d.pauser||[]).filter(x=>x.fra);if(p.length)o.pauser=p.map(x=>x.til?{fra:x.fra,til:x.til}:{fra:x.fra});
+  const j=(d.jobs||[]).filter(x=>x.nr&&x.nr.trim()).map(x=>{const o={nr:x.nr.trim(),t:Math.round((Number(x.t)||0)*100)/100};const b=(x.b||"").trim();if(b)o.b=b;return o});if(j.length)o.jobs=j;
   if(d.fravaer)o.fravaer=d.fravaer; if(d.note)o.note=d.note;
   return Object.keys(o).length?o:null;
 }
+
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const parseH=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)&&n>=0?n:0};
+const jobText=d=>(d.jobs||[]).map(j=>`<span class="job"><span class="jn">${esc(j.nr)}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
 
 // ---------- stamping ----------
 function stamp(action){
@@ -360,6 +394,7 @@ function renderToday(){
   if(d.ind)log.push(`Ind <b>${d.ind}</b>`);
   for(const p of d.pauser||[])log.push(`Pause <b>${p.fra}–${p.til||"…"}</b>`);
   if(d.ud)log.push(`Ud <b>${d.ud}</b>`);
+  for(const j of d.jobs||[])log.push(`Job <b>${esc(j.nr)}</b> ${fmt(j.t)} t${j.b?" – "+esc(j.b):""}`);
   $("log").innerHTML=log.map(x=>`<li>${x}</li>`).join("");
   $("absChips").replaceChildren(...ABS.map(a=>{const b=document.createElement("button");b.className="chip";b.textContent=a;b.setAttribute("aria-pressed",d.fravaer===a?"true":"false");b.disabled=!state.canWrite||!state.uid;b.onclick=()=>setAbs(a);return b}));
 }
@@ -370,19 +405,23 @@ function renderPeriod(){
   const p=state.period;
   $("perTitle").textContent=`${MONTHS[p.end.getMonth()][0].toUpperCase()+MONTHS[p.end.getMonth()].slice(1)} ${p.end.getFullYear()}`;
   $("perRange").textContent=`${pad(p.start.getDate())}.${pad(p.start.getMonth()+1)}.${p.start.getFullYear()} – ${pad(p.end.getDate())}.${pad(p.end.getMonth()+1)}.${p.end.getFullYear()}`;
-  const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
+  const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const jobTot={};const jobDesc={};const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
   for(const k of periodDays()){
     const d=state.days[k]||(k===tk?state.today:null)||{};const c=calc(k,d);const dt=parseKey(k);const we=c.norm===0;
     if(c.diff!=null&&!c.open)tD+=c.diff; if(c.abs)tA+=c.abs; if(c.work)tW+=c.work;
     const pTxt=c.pause?fmt(c.pause):"";
     const diffCell=c.missing?`<span class="miss">mangler ud</span>`:c.open?`<span class="tag" style="color:var(--plus)">i gang</span>`:(c.diff!=null&&Math.abs(c.diff)>=0.005?`<span class="${c.diff>0?"plus":"minus"}">${fmt(c.diff,true)}</span>`:"");
     const tag=d.fravaer?` <span class="tag">${d.fravaer}${c.abs?" "+fmt(c.abs):""}</span>`:"";
-    rows.push(`<tr data-date="${k}" class="${we?"we":""} ${k===tk?"today":""}"><td class="d">${DAYS[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}${tag}</td><td>${d.ind||""}</td><td>${d.ud||""}</td><td>${pTxt}</td><td>${c.work!=null?fmt(c.work):""}</td><td>${diffCell}</td></tr>`);
+    for(const j of d.jobs||[]){jobTot[j.nr]=(jobTot[j.nr]||0)+j.t;if(j.b)jobDesc[j.nr]=j.b}
+    rows.push(`<tr data-date="${k}" class="${we?"we":""} ${k===tk?"today":""} ${d.jobs?"has-jobs":""}"><td class="d">${DAYS[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}${tag}</td><td>${d.ind||""}</td><td>${d.ud||""}</td><td>${pTxt}</td><td>${c.work!=null?fmt(c.work):""}</td><td>${diffCell}</td></tr>`+(d.jobs?`<tr data-date="${k}" class="jobtr ${we?"we":""}"><td colspan="6"><span class="jobs">${jobText(d)}</span></td></tr>`:""));
     const dd=(c.diff!=null&&!c.open&&Math.abs(c.diff)>=0.005)?c.diff:null;
     if(dd!=null||c.abs)formLines.push(`${pad(dt.getDate())}-${pad(dt.getMonth()+1)}-${String(dt.getFullYear()).slice(2)}  ${DAYS_LONG[dt.getDay()].padEnd(8)} ${(dd!=null?fmt(dd):"").padStart(7)}  ${(c.abs?fmt(c.abs):"").padStart(7)}${d.fravaer?"  "+d.fravaer:""}`);
     if(d.ind||d.fravaer||d.note)csv.push([`${pad(dt.getDate())}-${pad(dt.getMonth()+1)}-${dt.getFullYear()}`,DAYS_LONG[dt.getDay()],d.ind||"",d.ud||"",c.pause?fmt(c.pause):"",c.work!=null?fmt(c.work):"",fmt(c.norm),dd!=null?fmt(dd):"",c.abs?fmt(c.abs):"",d.fravaer||"",d.note||""]);
   }
   $("rows").innerHTML=rows.join("");
+  const jt=Object.entries(jobTot).sort((a,b)=>b[1]-a[1]);
+  $("jobBox").hidden=!jt.length;
+  $("jobSum").innerHTML=jt.map(([n,h])=>`<div><span class="n">${esc(n)}${jobDesc[n]?`<small>${esc(jobDesc[n])}</small>`:""}</span><span class="h">${fmt(h)} t</span></div>`).join("")+(jt.length?`<div><span class="muted">I alt fordelt</span><span class="h">${fmt(jt.reduce((a,b)=>a+b[1],0))} af ${fmt(tW)} t</span></div>`:"");
   $("tDiff").textContent=fmt(tD,true);$("tDiff").className="v "+(tD>0.004?"plus":tD<-0.004?"minus":"");
   $("tAbs").textContent=fmt(tA);$("tWork").textContent=fmt(tW);
   const head="Dato      Dag       Arb.tid  Ikke på arb.";
@@ -403,16 +442,48 @@ function pRow(p={}){
   div.innerHTML=`<label class="field" for="pf${i}">Fra<input type="time" id="pf${i}" value="${p.fra||""}"></label><label class="field" for="pt${i}">Til<input type="time" id="pt${i}" value="${p.til||""}"></label><button type="button" aria-label="Fjern pause">✕</button>`;
   div.querySelector("button").onclick=()=>div.remove();$("pList").append(div);
 }
+function formWork(){
+  const inM=toMin($("fIn").value),outM=toMin($("fOut").value);if(inM==null||outM==null||outM<=inM)return null;
+  let p=0;for(const r of $("pList").children){const [a,b]=r.querySelectorAll("input");const x=toMin(a.value),y=toMin(b.value);if(x!=null&&y!=null&&y>x)p+=y-x}
+  return Math.max(0,outM-inM-p)/60;
+}
+function updAlloc(){
+  const w=formWork();const sum=[...$("jList").children].reduce((a,r)=>a+parseH(r.querySelectorAll("input")[1].value),0);
+  $("alloc").textContent=sum||w!=null?`Fordelt ${fmt(sum)}${w!=null?" af "+fmt(w):""} t`:"";
+}
+function jRow(j={}){
+  const div=document.createElement("div");div.className="jrow";const i=$("jList").children.length;
+  let t=j.t;if(t==null){const w=formWork();const used=[...$("jList").children].reduce((a,r)=>a+parseH(r.querySelectorAll("input")[1].value),0);t=w!=null?Math.max(0,Math.round((w-used)*100)/100):""}
+  div.innerHTML=`<label class="field" for="jn${i}">Jobnr.<input id="jn${i}" list="jobOpts" autocomplete="off" maxlength="40" value="${esc(j.nr||"")}"></label><label class="field" for="jt${i}">Timer<input id="jt${i}" class="num" inputmode="decimal" value="${t===""?"":String(t).replace(".",",")}"></label><button type="button" aria-label="Fjern jobnummer">✕</button><label class="field desc" for="jb${i}">Beskrivelse<input id="jb${i}" maxlength="120" placeholder="Valgfri" value="${esc(j.b||"")}"></label>`;
+  div.querySelector("button").onclick=()=>{div.remove();updAlloc()};
+  const [nrIn,,bIn]=div.querySelectorAll("input");
+  nrIn.addEventListener("change",()=>{if(!bIn.value.trim()){const last=lastDesc(nrIn.value.trim());if(last)bIn.value=last}});
+  div.addEventListener("input",updAlloc);$("jList").append(div);updAlloc();return div;
+}
+function lastDesc(nr){
+  if(!nr)return "";
+  for(const k of Object.keys(state.days).sort().reverse())for(const j of state.days[k].jobs||[])if(j.nr===nr&&j.b)return j.b;
+  return "";
+}
+function fillJobOpts(){
+  const seen=new Map();
+  for(const k of Object.keys(state.days).sort().reverse())for(const j of state.days[k].jobs||[])if(!seen.has(j.nr))seen.set(j.nr,1);
+  $("jobOpts").innerHTML=[...seen.keys()].slice(0,30).map(n=>`<option value="${esc(n)}">`).join("");
+}
 function openDay(k){
   if(!state.uid){toast("Log ind for at rette tider");return}
   state.editing=k;const d=state.days[k]||(k===key(new Date())?state.today:null)||{};const dt=parseKey(k);
   $("dlgTitle").textContent=`${DAYS_LONG[dt.getDay()]} ${dt.getDate()}. ${MONTHS[dt.getMonth()]}`;
   $("fIn").value=d.ind||"";$("fOut").value=d.ud||"";$("fAbs").value=d.fravaer||"";$("fNote").value=d.note||"";
   $("pList").replaceChildren();(d.pauser||[]).forEach(pRow);$("confirmDel").hidden=true;
+  $("jList").replaceChildren();fillJobOpts();(d.jobs||[]).forEach(jRow);updAlloc();
   $("dlg").hidden=false;$("fIn").focus();
 }
 function closeDlg(){$("dlg").hidden=true;state.editing=null}
-$("addP").onclick=()=>pRow();
+$("addP").onclick=()=>{pRow();updAlloc()};
+$("addJ").onclick=()=>{jRow().querySelector("input").focus()};
+["fIn","fOut"].forEach(id=>$(id).addEventListener("input",updAlloc));
+$("pList").addEventListener("input",updAlloc);
 $("cancel").onclick=closeDlg;
 $("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))closeDlg()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dlg").hidden)closeDlg()});
@@ -423,7 +494,8 @@ $("dlgForm").addEventListener("submit",e=>{
   const pauser=[...$("pList").children].map(r=>{const [a,b]=r.querySelectorAll("input");return{fra:a.value,til:b.value}}).filter(p=>p.fra);
   const inM=toMin($("fIn").value),outM=toMin($("fOut").value);
   if(inM!=null&&outM!=null&&outM<=inM){toast("Gået hjem skal være efter mødt ind");return}
-  setDay(state.editing,{ind:$("fIn").value,ud:$("fOut").value,pauser,fravaer:$("fAbs").value,note:$("fNote").value.trim()});
+  const jobs=[...$("jList").children].map(r=>{const [a,b,c]=r.querySelectorAll("input");return{nr:a.value,t:parseH(b.value),b:c.value}}).filter(j=>j.nr.trim());
+  setDay(state.editing,{ind:$("fIn").value,ud:$("fOut").value,pauser,jobs,fravaer:$("fAbs").value,note:$("fNote").value.trim()});
   toast("Gemt");closeDlg();
 });
 $("editToday").onclick=()=>openDay(key(new Date()));
