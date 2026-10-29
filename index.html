@@ -115,6 +115,12 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 .jobs .jn{font-family:var(--mono)}
 .jobs .jd{overflow-wrap:anywhere}
 .jobs .jt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.saldo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.saldo div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.saldo .v{font-family:var(--mono);font-size:1.3rem;font-weight:600;font-variant-numeric:tabular-nums}
+.saldo small{color:var(--muted);font-size:.75rem}
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.sgrid label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
 .jobsum{margin:14px 0 0;display:flex;flex-direction:column;gap:0}
 .jobsum div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
 .jobsum .n small{display:block;font-family:var(--body);font-weight:400;color:var(--muted);font-size:.8rem}
@@ -168,6 +174,13 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider og jobnumre i dag</button></div>
   </section>
 
+  <section class="saldo" aria-label="Saldi i dag">
+    <div><span class="label">Flexsaldo</span><span class="v" id="balFlex">0,00</span><small>timer</small></div>
+    <div><span class="label">Ferie</span><span class="v" id="balFerie">0,00</span><small>dage tilbage</small></div>
+    <div><span class="label">Feriefridage</span><span class="v" id="balFfri">0,00</span><small>dage tilbage</small></div>
+  </section>
+  <p class="muted" id="saldoHint" style="margin:-10px 0 0;font-size:.85rem" hidden>Indtast dine startsaldi under <b>Saldi</b> nederst, så regner stempeluret videre derfra.</p>
+
   <section class="card" aria-labelledby="perTitle">
     <div class="period-head">
       <button id="prev" aria-label="Forrige periode">‹</button>
@@ -182,6 +195,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <div><span class="label">Ikke på arb.</span><span class="v" id="tAbs">0,00</span></div>
       <div><span class="label">Arbejdet</span><span class="v" id="tWork">0,00</span></div>
     </div>
+    <p class="muted num" id="perFlex" style="margin:-4px 0 12px;font-size:.85rem"></p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Dato</th><th>Ind</th><th>Ud</th><th>Pause</th><th>Timer</th><th>+/-</th></tr></thead>
@@ -214,6 +228,19 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     <div class="row" style="margin-top:10px"><button id="saveNorm">Gem indstillinger</button></div>
   </section>
 
+  <section class="card" aria-labelledby="salTitle">
+    <h2 id="salTitle">Saldi</h2>
+    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Skriv dine saldi, som de stod ved startdatoen (fx fra Timeregnskab). Stempeluret regner videre med dine registreringer fra og med startdatoen. Ferieoptjening lægges til den 1. i hver måned efter startdatoen.</p>
+    <div class="sgrid">
+      <label for="sDate">Startdato<input type="date" id="sDate"></label>
+      <label for="sFlex">Flexsaldo (timer)<input id="sFlex" class="num" inputmode="decimal" placeholder="0,00"></label>
+      <label for="sFerie">Ferie (dage)<input id="sFerie" class="num" inputmode="decimal" placeholder="0,00"></label>
+      <label for="sOptj">Optjening pr. md. (dage)<input id="sOptj" class="num" inputmode="decimal" placeholder="2,08"></label>
+      <label for="sFfri">Feriefridage (dage)<input id="sFfri" class="num" inputmode="decimal" placeholder="0,00"></label>
+    </div>
+    <div class="row" style="margin-top:10px"><button id="saveSaldo">Gem saldi</button></div>
+  </section>
+
   <section class="card" aria-labelledby="bakTitle">
     <h2 id="bakTitle">Sikkerhedskopi</h2>
     <p class="muted" style="margin:4px 0 0;font-size:.9rem">Dine registreringer gemmes kun i denne browser på denne telefon. Tag en kopi en gang imellem, og når du skifter telefon.</p>
@@ -230,7 +257,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <li><b>Møder ind:</b> Tryk <b>Stempl ind</b>.</li>
         <li><b>Pause:</b> Tryk <b>Start pause</b> og <b>Slut pause</b>. Du kan holde flere pauser.</li>
         <li><b>Går hjem:</b> Tryk <b>Stempl ud</b>. Kommer du til at trykke for tidligt, så tryk <b>Fortryd udstempling</b>.</li>
-        <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>.</li>
+        <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie og feriefridage trækkes fra feriesaldoen, afspadsering fra flexsaldoen.</li>
         <li><b>Jobnumre:</b> Tryk <b>Ret tider og jobnumre i dag</b> og <b>+ Tilføj jobnummer</b>. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; den huskes til næste gang, du bruger samme jobnummer.</li>
         <li><b>Glemt at stemple:</b> Tryk på dagen i periodeoversigten, og ret tiderne.</li>
       </ul>
@@ -265,7 +292,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <datalist id="jobOpts"></datalist>
     </div>
     <label class="field" for="fAbs">Fravær
-      <select id="fAbs"><option value="">Intet</option><option>Ferie</option><option>Syg</option><option>Afspadsering</option><option>Fri</option></select>
+      <select id="fAbs"><option value="">Intet</option><option>Ferie</option><option>Feriefridag</option><option>Syg</option><option>Afspadsering</option><option>Fri</option></select>
     </label>
     <label class="field" for="fNote">Bemærkning<input id="fNote" maxlength="120"></label>
     <div class="row" style="justify-content:space-between">
@@ -282,11 +309,12 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 const MONTHS=["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 const DAYS=["Søn","Man","Tir","Ons","Tor","Fre","Lør"];
 const DAYS_LONG=["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag"];
-const ABS=["Ferie","Syg","Afspadsering","Fri"];
+const ABS=["Ferie","Feriefridag","Syg","Afspadsering","Fri"];
 const DEFAULT_NORM={1:8,2:8,3:8,4:8,5:5};
 const $=id=>document.getElementById(id);
 
-const state={name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
+const DEFAULT_SALDO={start:"",flex:0,ferie:0,optj:2.08,ffri:0};
+const state={saldo:{...DEFAULT_SALDO},name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
 
 // ---------- dates & math ----------
 const pad=n=>String(n).padStart(2,"0");
@@ -322,11 +350,11 @@ const STORE="jwi-stempelur-v1";
 let storeOk=true;
 function load(){
   try{const raw=localStorage.getItem(STORE);if(!raw)return;const o=JSON.parse(raw);
-    if(o.days)state.days=o.days; if(o.norm)state.norm={...DEFAULT_NORM,...o.norm}; if(o.name)state.name=o.name;}
+    if(o.days)state.days=o.days; if(o.norm)state.norm={...DEFAULT_NORM,...o.norm}; if(o.name)state.name=o.name; if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo};}
   catch{storeOk=false}
 }
 function save(){
-  try{localStorage.setItem(STORE,JSON.stringify({v:1,name:state.name||"",norm:state.norm,days:state.days}))}
+  try{localStorage.setItem(STORE,JSON.stringify({v:1,name:state.name||"",norm:state.norm,saldo:state.saldo,days:state.days}))}
   catch{storeOk=false;notice("Browseren tillader ikke at gemme. Brug ikke privat browsing, og åbn siden fra en webadresse.")}
 }
 function setDay(k,day){
@@ -427,6 +455,7 @@ function renderPeriod(){
   const head="Dato      Dag       Arb.tid  Ikke på arb.";
   $("formText").textContent=formLines.length?head+"\n"+formLines.join("\n"):"Ingen afvigelser i perioden endnu.\nNår du stempler mere eller mindre end normtiden, kommer dagen med her.";
   state.csv=csv;
+  renderSaldo();
 }
 
 function renderNorm(){
@@ -434,6 +463,43 @@ function renderNorm(){
   $("fName").value=state.name||"";$("who").textContent=state.name||"";
   $("norm").innerHTML=Object.entries(names).map(([wd,n])=>`<label for="n${wd}">${n}<input id="n${wd}" class="num" inputmode="decimal" value="${String(state.norm[wd]??0).replace(".",",")}"></label>`).join("");
 }
+// ---------- saldi ----------
+function dayFlex(k,d){ // flex change for one finished day
+  const c=calc(k,d);if(c.open)return 0;
+  let f=c.diff||0; if(d.fravaer==="Afspadsering")f-=(c.abs||0);
+  return f;
+}
+function dayLeave(k,d,type){ // days of leave used
+  if(d.fravaer!==type)return 0;const c=calc(k,d);
+  return c.norm>0?(c.abs||0)/c.norm:0;
+}
+function balances(uptoKey){
+  const sd=state.saldo,start=sd.start||"0000-00-00";
+  let flex=Number(sd.flex)||0,ferie=Number(sd.ferie)||0,ffri=Number(sd.ffri)||0;
+  for(const k of Object.keys(state.days)){if(k<start||k>uptoKey)continue;const d=state.days[k];
+    flex+=dayFlex(k,d);ferie-=dayLeave(k,d,"Ferie");ffri-=dayLeave(k,d,"Feriefridag")}
+  if(sd.start){const a=parseKey(sd.start),b=parseKey(uptoKey);const months=(b.getFullYear()*12+b.getMonth())-(a.getFullYear()*12+a.getMonth());if(months>0)ferie+=months*(Number(sd.optj)||0)}
+  return{flex,ferie,ffri};
+}
+function signCls(v){return v>0.004?"plus":v<-0.004?"minus":""}
+function renderSaldo(){
+  const b=balances(key(new Date()));
+  $("balFlex").textContent=fmt(b.flex,true);$("balFlex").className="v "+signCls(b.flex);
+  $("balFerie").textContent=fmt(b.ferie);$("balFfri").textContent=fmt(b.ffri);
+  $("saldoHint").hidden=!!state.saldo.start;
+  const pe=key(state.period.end);const pb=balances(pe<key(new Date())?pe:key(new Date()));
+  $("perFlex").textContent=state.saldo.start?`Flexsaldo ${pe<key(new Date())?"ved periodens slut":"i dag"}: ${fmt(pb.flex,true)} t`:"";
+}
+function fillSaldoForm(){
+  const sd=state.saldo,f=v=>v===""||v==null?"":String(v).replace(".",",");
+  $("sDate").value=sd.start||"";$("sFlex").value=f(sd.flex);$("sFerie").value=f(sd.ferie);$("sOptj").value=f(sd.optj);$("sFfri").value=f(sd.ffri);
+}
+$("saveSaldo").onclick=()=>{
+  const n=id=>{const v=parseFloat($(id).value.replace(",",".").replace("−","-"));return isFinite(v)?v:0};
+  if(!$("sDate").value){toast("Vælg en startdato");$("sDate").focus();return}
+  state.saldo={start:$("sDate").value,flex:n("sFlex"),ferie:n("sFerie"),optj:$("sOptj").value.trim()===""?2.08:n("sOptj"),ffri:n("sFfri")};
+  save();fillSaldoForm();renderAll();toast("Saldi gemt");
+};
 function renderAll(){renderToday();renderPeriod()}
 
 // ---------- dialog ----------
@@ -555,13 +621,13 @@ $("csv").onclick=()=>{
   const p=state.period;download(`Stempelur ${MONTHS[p.end.getMonth()]} ${p.end.getFullYear()}.csv`,body,"text/csv;charset=utf-8");
 };
 $("backup").onclick=()=>{
-  download(`Stempelur backup ${key(new Date())}.json`,JSON.stringify({v:1,name:state.name,norm:state.norm,days:state.days},null,1),"application/json");
+  download(`Stempelur backup ${key(new Date())}.json`,JSON.stringify({v:1,name:state.name,norm:state.norm,saldo:state.saldo,days:state.days},null,1),"application/json");
 };
 $("restore").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{const o=JSON.parse(await f.text());if(!o||typeof o.days!=="object")throw 0;
-    state.days={...state.days,...o.days};if(o.norm)state.norm={...DEFAULT_NORM,...o.norm};if(o.name)state.name=o.name;
-    save();state.today=state.days[key(new Date())]||null;renderNorm();renderAll();toast(`Indlæst ${Object.keys(o.days).length} dage`)}
+    state.days={...state.days,...o.days};if(o.norm)state.norm={...DEFAULT_NORM,...o.norm};if(o.name)state.name=o.name;if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo};
+    save();state.today=state.days[key(new Date())]||null;renderNorm();fillSaldoForm();renderAll();toast(`Indlæst ${Object.keys(o.days).length} dage`)}
   catch{toast("Filen kunne ikke læses som sikkerhedskopi")}
   e.target.value="";
 };
@@ -580,7 +646,7 @@ function notice(m){$("notice").textContent=m;$("notice").hidden=!m}
 load();
 state.today=state.days[key(new Date())]||null;
 state.period=periodOf(new Date());
-renderNorm();renderAll();
+renderNorm();fillSaldoForm();renderAll();
 if(!storeOk)notice("Browseren tillader ikke at gemme. Brug ikke privat browsing, og åbn siden fra en webadresse.");
 let lastDay=key(new Date());
 setInterval(()=>{
