@@ -384,13 +384,15 @@ function normalize(d){
   const o={};
   if(d.ind)o.ind=d.ind; if(d.ud)o.ud=d.ud;
   const p=(d.pauser||[]).filter(x=>x.fra);if(p.length)o.pauser=p.map(x=>x.til?{fra:x.fra,til:x.til}:{fra:x.fra});
-  const j=(d.jobs||[]).filter(x=>x.nr&&x.nr.trim()).map(x=>{const o={nr:x.nr.trim(),t:Math.round((Number(x.t)||0)*100)/100};const po=(x.po||"").trim();if(po)o.po=po;const b=(x.b||"").trim();if(b)o.b=b;if(x.bc)o.bc=true;return o});if(j.length)o.jobs=j;
+  const j=(d.jobs||[]).filter(x=>[x.nr,x.po,x.b].some(v=>v&&String(v).trim())).map(x=>{const o={nr:(x.nr||"").trim(),t:Math.round((Number(x.t)||0)*100)/100};const po=(x.po||"").trim();if(po)o.po=po;const b=(x.b||"").trim();if(b)o.b=b;if(x.bc)o.bc=true;return o});if(j.length)o.jobs=j;
   if(d.fravaer)o.fravaer=d.fravaer; if(d.note)o.note=d.note;
   return Object.keys(o).length?o:null;
 }
 
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const parseH=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)&&n>=0?n:0};
+const jobKey=j=>[j.nr||"",j.po||"",j.nr||j.po?"":(j.b||"")].join("|");
+const jobLabel=j=>j.nr||(j.po?"PO "+j.po:"")||j.b||"Ordre";
 const jobText=(d,k)=>(d.jobs||[]).map((j,i)=>`<span class="job ${j.bc?"bc":"nobc"}" data-k="${k}" data-i="${i}" title="${j.bc?"Registreret i BC – tryk for at fjerne markering":"Ikke registreret i BC – tryk når den er registreret"}"><span class="jn">${esc(j.nr)}</span><span class="jp">${j.po?esc(j.po):""}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
 
 // ---------- stamping ----------
@@ -449,14 +451,14 @@ function renderPeriod(){
   const p=state.period;
   $("perTitle").textContent=`${MONTHS[p.end.getMonth()][0].toUpperCase()+MONTHS[p.end.getMonth()].slice(1)} ${p.end.getFullYear()}`;
   $("perRange").textContent=`${pad(p.start.getDate())}.${pad(p.start.getMonth()+1)}.${p.start.getFullYear()} – ${pad(p.end.getDate())}.${pad(p.end.getMonth()+1)}.${p.end.getFullYear()}`;
-  const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const jobTot={};const jobDesc={};const jobPo={};const jobMiss={};const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
+  const tk=key(new Date());let tD=0,tA=0,tW=0;const rows=[];const jobTot={};const jobDesc={};const jobPo={};const jobNr={};const jobMiss={};const formLines=[];const csv=[["Dato","Dag","Ind","Ud","Pause (timer)","Arbejdstid","Norm","+/- timer","Ikke på arb.","Fravær","Bemærkning"]];
   for(const k of periodDays()){
     const d=state.days[k]||(k===tk?state.today:null)||{};const c=calc(k,d);const dt=parseKey(k);const we=c.norm===0;
     if(c.diff!=null&&!c.open)tD+=c.diff; if(c.abs)tA+=c.abs; if(c.work)tW+=c.work;
     const pTxt=c.pause?fmt(c.pause):"";
     const diffCell=c.missing?`<span class="miss">mangler ud</span>`:c.open?`<span class="tag" style="color:var(--plus)">i gang</span>`:(c.diff!=null&&Math.abs(c.diff)>=0.005?`<span class="${c.diff>0?"plus":"minus"}">${fmt(c.diff,true)}</span>`:"");
     const tag=d.fravaer?` <span class="tag">${d.fravaer}${c.abs?" "+fmt(c.abs):""}</span>`:"";
-    for(const j of d.jobs||[]){jobTot[j.nr]=(jobTot[j.nr]||0)+j.t;if(j.b)jobDesc[j.nr]=j.b;if(j.po)jobPo[j.nr]=j.po;if(!j.bc)jobMiss[j.nr]=(jobMiss[j.nr]||0)+j.t}
+    for(const j of d.jobs||[]){const g=jobKey(j);jobTot[g]=(jobTot[g]||0)+j.t;if(j.b)jobDesc[g]=j.b;if(j.po)jobPo[g]=j.po;if(j.nr)jobNr[g]=j.nr;if(!j.bc)jobMiss[g]=(jobMiss[g]||0)+j.t}
     rows.push(`<tr data-date="${k}" class="${we?"we":""} ${k===tk?"today":""} ${d.jobs?"has-jobs":""}"><td class="d">${DAYS[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1}${tag}</td><td>${d.ind||""}</td><td>${d.ud||""}</td><td>${pTxt}</td><td>${c.work!=null?fmt(c.work):""}</td><td>${diffCell}</td></tr>`+(d.jobs?`<tr data-date="${k}" class="jobtr ${we?"we":""}"><td colspan="6"><span class="jobs">${jobText(d,k)}</span></td></tr>`:""));
     const dd=(c.diff!=null&&!c.open&&Math.abs(c.diff)>=0.005)?c.diff:null;
     if(dd!=null||c.abs)formLines.push(`${pad(dt.getDate())}-${pad(dt.getMonth()+1)}-${String(dt.getFullYear()).slice(2)}  ${DAYS_LONG[dt.getDay()].padEnd(8)} ${(dd!=null?fmt(dd):"").padStart(7)}  ${(c.abs?fmt(c.abs):"").padStart(7)}${d.fravaer?"  "+d.fravaer:""}`);
@@ -466,7 +468,7 @@ function renderPeriod(){
   const jt=Object.entries(jobTot).sort((a,b)=>b[1]-a[1]);
   $("jobBox").hidden=!jt.length;$("bcLegend").hidden=!jt.length;
   const missTot=Object.values(jobMiss).reduce((a,b)=>a+b,0);$("allBc").hidden=!missTot;
-  $("jobSum").innerHTML=jt.map(([n,h])=>`<div><span class="n">${esc(n)}${jobPo[n]||jobDesc[n]?`<small>${[jobPo[n]?"PO "+esc(jobPo[n]):"",jobDesc[n]?esc(jobDesc[n]):""].filter(Boolean).join(" · ")}</small>`:""}</span><span class="h">${fmt(h)} t${jobMiss[n]?`<span class="miss">${fmt(jobMiss[n])} t mangler i BC</span>`:""}</span></div>`).join("")+(jt.length?`<div><span class="muted">I alt fordelt</span><span class="h">${fmt(jt.reduce((a,b)=>a+b[1],0))} af ${fmt(tW)} t</span></div>`:"");
+  $("jobSum").innerHTML=jt.map(([n,h])=>{const head=jobNr[n]||(jobPo[n]?"PO "+jobPo[n]:jobDesc[n]||"");const sub=[jobNr[n]&&jobPo[n]?"PO "+esc(jobPo[n]):"",(jobNr[n]||jobPo[n])&&jobDesc[n]?esc(jobDesc[n]):""].filter(Boolean).join(" · ");return `<div><span class="n">${esc(head)}${sub?`<small>${sub}</small>`:""}</span><span class="h">${fmt(h)} t${jobMiss[n]?`<span class="miss">${fmt(jobMiss[n])} t mangler i BC</span>`:""}</span></div>`}).join("")+(jt.length?`<div><span class="muted">I alt fordelt</span><span class="h">${fmt(jt.reduce((a,b)=>a+b[1],0))} af ${fmt(tW)} t</span></div>`:"");
   $("tDiff").textContent=fmt(tD,true);$("tDiff").className="v "+(tD>0.004?"plus":tD<-0.004?"minus":"");
   $("tAbs").textContent=fmt(tA);$("tWork").textContent=fmt(tW);
   const head="Dato      Dag       Arb.tid  Ikke på arb.";
@@ -557,7 +559,7 @@ function lastDesc(nr){
 }
 function fillJobOpts(){
   const seen=new Map();
-  for(const k of Object.keys(state.days).sort().reverse())for(const j of state.days[k].jobs||[])if(!seen.has(j.nr))seen.set(j.nr,1);
+  for(const k of Object.keys(state.days).sort().reverse())for(const j of state.days[k].jobs||[])if(j.nr&&!seen.has(j.nr))seen.set(j.nr,1);
   $("jobOpts").innerHTML=[...seen.keys()].slice(0,30).map(n=>`<option value="${esc(n)}">`).join("");
 }
 function openDay(k){
@@ -584,14 +586,14 @@ $("dlgForm").addEventListener("submit",e=>{
   const pauser=[...$("pList").children].map(r=>{const [a,b]=r.querySelectorAll("input");return{fra:a.value,til:b.value}}).filter(p=>p.fra);
   const inM=toMin($("fIn").value),outM=toMin($("fOut").value);
   if(inM!=null&&outM!=null&&outM<=inM){toast("Gået hjem skal være efter mødt ind");return}
-  const jobs=[...$("jList").children].map(r=>{const q=c=>r.querySelector(c);const cb=q("input[type=checkbox]");return{nr:q(".j-nr").value,po:q(".j-po").value,t:parseH(q(".j-t").value),b:q(".j-b").value,bc:cb&&cb.checked}}).filter(j=>j.nr.trim());
+  const jobs=[...$("jList").children].map(r=>{const q=c=>r.querySelector(c);const cb=q("input[type=checkbox]");return{nr:q(".j-nr").value,po:q(".j-po").value,t:parseH(q(".j-t").value),b:q(".j-b").value,bc:cb&&cb.checked}}).filter(j=>[j.nr,j.po,j.b].some(v=>v&&v.trim()));
   setDay(state.editing,{ind:$("fIn").value,ud:$("fOut").value,pauser,jobs,fravaer:$("fAbs").value,note:$("fNote").value.trim()});
   toast("Gemt");closeDlg();
 });
 $("editToday").onclick=()=>openDay(key(new Date()));
 $("rows").addEventListener("click",e=>{
   const jb=e.target.closest(".job[data-k]");
-  if(jb){const k=jb.dataset.k,i=+jb.dataset.i;const d=structuredClone(state.days[k]||{});if(d.jobs&&d.jobs[i]){d.jobs[i].bc=!d.jobs[i].bc;setDay(k,d);toast(d.jobs[i].bc?`${d.jobs[i].nr} markeret som registreret i BC`:`${d.jobs[i].nr} ikke registreret i BC`)}return}
+  if(jb){const k=jb.dataset.k,i=+jb.dataset.i;const d=structuredClone(state.days[k]||{});if(d.jobs&&d.jobs[i]){d.jobs[i].bc=!d.jobs[i].bc;setDay(k,d);toast(d.jobs[i].bc?`${jobLabel(d.jobs[i])} markeret som registreret i BC`:`${jobLabel(d.jobs[i])} ikke registreret i BC`)}return}
   const tr=e.target.closest("tr[data-date]");if(tr)openDay(tr.dataset.date)});
 
 $("allBc").onclick=()=>{$("allBcConfirm").hidden=false};
