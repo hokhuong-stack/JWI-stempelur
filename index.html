@@ -152,22 +152,46 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 .guide h3{font-family:var(--display);font-size:1.05rem;font-weight:600;margin:16px 0 6px}
 .guide ul,.guide ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
 .guide b{font-weight:600}
+/* Desktop: two columns – stamping & saldi left, period ledger right */
+@media (min-width:1000px){
+  body{font-size:15px}
+  .wrap{max-width:1320px;display:grid;grid-template-columns:400px minmax(0,1fr);column-gap:24px;row-gap:20px;align-items:start;
+    grid-template-areas:"head head" "note note" "today per" "saldo per" "hint per" "form per" "guide per" "fill per" "set sal" "sync sal" "bak sal";
+    grid-template-rows:auto auto auto auto auto auto auto 1fr auto auto auto}
+  .wrap>*{align-self:start}
+  .a-head{grid-area:head}.a-note{grid-area:note}.a-today{grid-area:today}.a-saldo{grid-area:saldo}.a-hint{grid-area:hint;margin:0!important}
+  .a-per{grid-area:per}.a-form{grid-area:form}.a-guide{grid-area:guide}.a-set{grid-area:set}.a-sal{grid-area:sal}.a-bak{grid-area:bak}.a-sync{grid-area:sync}
+  .a-per table{font-size:.95rem}
+  td{padding-top:8px;padding-bottom:8px}
+  th+th,td+td{padding-left:22px}
+  .jobs{font-size:.82rem;gap:2px 18px}
+  .a-sal .sgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  tr[data-date]:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+}
+@media (min-width:1400px){.wrap{grid-template-columns:440px minmax(0,1fr)}}
+.syncrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cloud{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.cloud::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.cloud.ok{color:var(--plus)} .cloud.busy{color:var(--accent)} .cloud.err{color:var(--minus)}
+.setup summary{cursor:pointer;color:var(--accent);font-size:.9rem;margin-top:12px}
+.setup .sgrid{grid-template-columns:1fr}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header class="a-head">
     <div>
       <div class="label">JW Industri · Tidsregistrering</div>
       <h1>Stempelur</h1>
     </div>
-    <div class="who" id="who"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="who" id="who"></div><span class="cloud" id="cloud" hidden></span></div>
   </header>
 
-  <div class="notice" id="notice" hidden></div>
+  <div class="notice a-note" id="notice" hidden></div>
 
-  <section class="card" aria-labelledby="todayTitle">
+  <section class="card a-today" aria-labelledby="todayTitle">
     <div class="clock">
       <div>
         <div class="label" id="todayTitle">I dag</div>
@@ -188,14 +212,14 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider og ordrer i dag</button></div>
   </section>
 
-  <section class="saldo" aria-label="Saldi i dag">
+  <section class="saldo a-saldo" aria-label="Saldi i dag">
     <div><span class="label">Flexsaldo</span><span class="v" id="balFlex">0,00</span><small>timer</small></div>
     <div><span class="label">Ferie</span><span class="v" id="balFerie">0,00</span><small>dage tilbage</small></div>
     <div><span class="label">Feriefridage</span><span class="v" id="balFfri">0,00</span><small>dage tilbage</small></div>
   </section>
-  <p class="muted" id="saldoHint" style="margin:-10px 0 0;font-size:.85rem" hidden>Indtast dine startsaldi under <b>Saldi</b> nederst, så regner stempeluret videre derfra.</p>
+  <p class="muted a-hint" id="saldoHint" style="margin:-10px 0 0;font-size:.85rem" hidden>Indtast dine startsaldi under <b>Saldi</b> nederst, så regner stempeluret videre derfra.</p>
 
-  <section class="card" aria-labelledby="perTitle">
+  <section class="card a-per" aria-labelledby="perTitle">
     <div class="period-head">
       <button id="prev" aria-label="Forrige måned">‹</button>
       <div class="mid">
@@ -226,7 +250,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     </div>
   </section>
 
-  <section class="card" aria-labelledby="formTitle">
+  <section class="card a-form" aria-labelledby="formTitle">
     <h2 id="formTitle">Til arbejdstidsskemaet</h2>
     <p class="muted" style="margin:4px 0 0;font-size:.9rem">Kun dage med afvigelse fra normtiden. Samme kolonner som skemaet: <i>Arbejdstid (i timer)</i> og <i>Ikke på arb.</i></p>
     <p class="num" id="formRange" style="margin:8px 0 0;font-size:.85rem;color:var(--muted)"></p>
@@ -238,15 +262,18 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     </div>
   </section>
 
-  <section class="card" aria-labelledby="setTitle">
+  <section class="card a-set" aria-labelledby="setTitle">
     <h2 id="setTitle">Indstillinger</h2>
     <p class="muted" style="margin:4px 0 0;font-size:.9rem">Normtid i timer pr. dag efter kontrakten. Bruges til at beregne +/-.</p>
     <div class="norm" id="norm"></div>
+    <label class="field" for="fRound" style="margin-top:12px">Afrund stempling til
+      <select id="fRound"><option value="1">Hele minutter</option><option value="5">5 minutter</option><option value="10">10 minutter</option></select>
+    </label>
     <label class="field" for="fName" style="margin-top:12px">Mit navn (vises på skemaet)<input id="fName" maxlength="60" autocomplete="name"></label>
     <div class="row" style="margin-top:10px"><button id="saveNorm">Gem indstillinger</button></div>
   </section>
 
-  <section class="card" aria-labelledby="salTitle">
+  <section class="card a-sal" aria-labelledby="salTitle">
     <h2 id="salTitle">Saldi</h2>
     <p class="muted" style="margin:4px 0 0;font-size:.9rem">Skriv dine saldi, som de stod ved startdatoen (fx fra Timeregnskab). Stempeluret regner videre med dine registreringer fra og med startdatoen. Ferieoptjening lægges til den 1. i hver måned efter startdatoen.</p>
     <div class="sgrid">
@@ -259,26 +286,45 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     <div class="row" style="margin-top:10px"><button id="saveSaldo">Gem saldi</button></div>
   </section>
 
-  <section class="card" aria-labelledby="bakTitle">
+  <section class="card a-sync" aria-labelledby="syncTitle">
+    <h2 id="syncTitle">Synkronisering</h2>
+    <p class="muted" id="syncText" style="margin:4px 0 10px;font-size:.9rem">Log ind med din Microsoft 365-konto, så gemmes dine registreringer i din egen OneDrive og er ens på telefon og pc.</p>
+    <div class="syncrow">
+      <button id="syncLogin" class="go" hidden>Log ind med Microsoft</button>
+      <button id="syncNowBtn" hidden>Synkroniser nu</button>
+      <button id="syncLogout" class="link" hidden>Log ud</button>
+    </div>
+    <details class="setup" id="syncSetup">
+      <summary>Opsætning (fra it)</summary>
+      <div class="sgrid">
+        <label for="cfgClient">Program-id (client ID)<input id="cfgClient" class="num" autocomplete="off" placeholder="00000000-0000-0000-0000-000000000000"></label>
+        <label for="cfgTenant">Mappe-id (tenant ID)<input id="cfgTenant" class="num" autocomplete="off" placeholder="00000000-0000-0000-0000-000000000000"></label>
+      </div>
+      <div class="row" style="margin-top:10px"><button id="cfgSave">Gem opsætning</button></div>
+    </details>
+  </section>
+
+  <section class="card a-bak" aria-labelledby="bakTitle">
     <h2 id="bakTitle">Sikkerhedskopi</h2>
-    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Dine registreringer gemmes kun i denne browser på denne telefon. Tag en kopi en gang imellem, og når du skifter telefon.</p>
+    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Uden synkronisering gemmes dine registreringer kun i browseren på denne enhed. Tag en kopi en gang imellem, og når du skifter telefon eller pc.</p>
     <div class="row" style="margin-top:10px">
       <button id="backup">Gem sikkerhedskopi</button>
       <label class="link" for="restore" style="cursor:pointer">Indlæs sikkerhedskopi<input type="file" id="restore" accept=".json,application/json" hidden></label>
     </div>
   </section>
-  <section class="card">
+  <section class="card a-guide">
     <details class="guide" id="guide">
       <summary><h2>Sådan bruger du stempeluret</h2></summary>
       <h3>Hver dag</h3>
       <ul>
-        <li><b>Møder ind:</b> Tryk <b>Stempl ind</b>.</li>
+        <li><b>Møder ind:</b> Tryk <b>Stempl ind</b>. Tiden afrundes til nærmeste 1, 5 eller 10 minutter, som du vælger under Indstillinger.</li>
         <li><b>Pause:</b> Tryk <b>Start pause</b> og <b>Slut pause</b>. Du kan holde flere pauser.</li>
         <li><b>Går hjem:</b> Tryk <b>Stempl ud</b>. Kommer du til at trykke for tidligt, så tryk <b>Fortryd udstempling</b>.</li>
         <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie og feriefridage trækkes fra feriesaldoen, afspadsering fra flexsaldoen.</li>
         <li><b>Ordrer:</b> Tryk <b>Ret tider og ordrer i dag</b> og <b>+ Tilføj ordre</b>. Skriv ordre nr., evt. PO nr. og timer. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; PO nr. og beskrivelse huskes til næste gang, du bruger samme ordre nr.</li>
         <li><b>Microsoft BC:</b> Ordrer, der mangler i BC, er orange med ○. Tryk på ordren i periodeoversigten, når du har registreret det i BC, så bliver det grønt med ✓.</li>
         <li><b>Helligdage:</b> Danske helligdage, Grundlovsdag og juleaften har normtid 0. Arbejder du på en helligdag, tæller alle timerne som plus.</li>
+        <li><b>Synkronisering:</b> Har it sat Microsoft 365 op, så tryk <b>Log ind med Microsoft</b> under Synkronisering på både telefon og pc. Så er dine registreringer ens begge steder og gemt i din OneDrive.</li>
         <li><b>Glemt at stemple:</b> Tryk på dagen i periodeoversigten, og ret tiderne.</li>
       </ul>
       <h3>Efter den 20. hver måned</h3>
@@ -329,6 +375,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
 <script>
 const MONTHS=["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 const DAYS=["Søn","Man","Tir","Ons","Tor","Fre","Lør"];
@@ -338,7 +385,7 @@ const DEFAULT_NORM={1:8,2:8,3:8,4:8,5:5};
 const $=id=>document.getElementById(id);
 
 const DEFAULT_SALDO={start:"",flex:0,ferie:0,optj:2.08,ffri:0};
-const state={saldo:{...DEFAULT_SALDO},name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
+const state={round:1,tomb:{},metaU:0,saldo:{...DEFAULT_SALDO},name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
 
 // ---------- dates & math ----------
 const pad=n=>String(n).padStart(2,"0");
@@ -387,16 +434,17 @@ const STORE="jwi-stempelur-v1";
 let storeOk=true;
 function load(){
   try{const raw=localStorage.getItem(STORE);if(!raw)return;const o=JSON.parse(raw);
-    if(o.days)state.days=o.days; if(o.norm)state.norm={...DEFAULT_NORM,...o.norm}; if(o.name)state.name=o.name; if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo};}
+    if(o.days)state.days=o.days; if(o.norm)state.norm={...DEFAULT_NORM,...o.norm}; if(o.name)state.name=o.name; if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo}; if(o.round)state.round=+o.round; state.tomb=o.tomb||{}; state.metaU=o.metaU||0;}
   catch{storeOk=false}
 }
 function save(){
-  try{localStorage.setItem(STORE,JSON.stringify({v:1,name:state.name||"",norm:state.norm,saldo:state.saldo,days:state.days}))}
+  try{localStorage.setItem(STORE,JSON.stringify({v:2,name:state.name||"",norm:state.norm,saldo:state.saldo,round:state.round||1,metaU:state.metaU||0,days:state.days,tomb:state.tomb||{}}))}
   catch{storeOk=false;notice("Browseren tillader ikke at gemme. Brug ikke privat browsing, og åbn siden fra en webadresse.")}
+  if(!sync.applying)syncSchedule();
 }
 function setDay(k,day){
-  const clean=normalize(day);
-  if(clean){state.days[k]=clean}else{delete state.days[k]}
+  const clean=normalize(day);const now=Date.now();
+  if(clean){clean.u=now;state.days[k]=clean;delete state.tomb[k]}else{if(state.days[k])state.tomb[k]=now;delete state.days[k]}
   state.today=state.days[key(new Date())]||null;
   save();renderAll();
 }
@@ -417,8 +465,15 @@ const jobLabel=j=>j.nr||(j.po?"PO "+j.po:"")||j.b||"Ordre";
 const jobText=(d,k)=>(d.jobs||[]).map((j,i)=>`<span class="job ${j.bc?"bc":"nobc"}" data-k="${k}" data-i="${i}" title="${j.bc?"Registreret i BC – tryk for at fjerne markering":"Ikke registreret i BC – tryk når den er registreret"}"><span class="jn">${esc(j.nr)}</span><span class="jp">${j.po?esc(j.po):""}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
 
 // ---------- stamping ----------
+// stempling afrundes til nærmeste 1, 5 eller 10 minutter (Indstillinger)
+function roundedNow(){
+  const d=new Date(),step=Number(state.round)||1;
+  let m=Math.round((d.getHours()*60+d.getMinutes()+d.getSeconds()/60)/step)*step;
+  m=Math.min(m,23*60+59);
+  return `${pad(Math.floor(m/60))}:${pad(m%60)}`;
+}
 function stamp(action){
-  const k=key(new Date()),t=hhmm(new Date());
+  const k=key(new Date()),t=roundedNow();
   const d=structuredClone(state.today||{});
   d.pauser=d.pauser||[];
   if(action==="in"){d.ind=t;delete d.ud}
@@ -507,7 +562,7 @@ function renderPeriod(){
 
 function renderNorm(){
   const names={1:"Man",2:"Tir",3:"Ons",4:"Tor",5:"Fre"};
-  $("fName").value=state.name||"";$("who").textContent=state.name||"";
+  $("fName").value=state.name||"";$("fRound").value=String(state.round||1);$("who").textContent=state.name||"";
   $("norm").innerHTML=Object.entries(names).map(([wd,n])=>`<label for="n${wd}">${n}<input id="n${wd}" class="num" inputmode="decimal" value="${String(state.norm[wd]??0).replace(".",",")}"></label>`).join("");
 }
 // ---------- saldi ----------
@@ -545,7 +600,7 @@ $("saveSaldo").onclick=()=>{
   const n=id=>{const v=parseFloat($(id).value.replace(",",".").replace("−","-"));return isFinite(v)?v:0};
   if(!$("sDate").value){toast("Vælg en startdato");$("sDate").focus();return}
   state.saldo={start:$("sDate").value,flex:n("sFlex"),ferie:n("sFerie"),optj:$("sOptj").value.trim()===""?2.08:n("sOptj"),ffri:n("sFfri")};
-  save();fillSaldoForm();renderAll();toast("Saldi gemt");
+  state.metaU=Date.now();save();fillSaldoForm();renderAll();toast("Saldi gemt");
 };
 function renderAll(){renderToday();renderPeriod()}
 
@@ -635,7 +690,7 @@ $("rows").addEventListener("click",e=>{
 
 $("allBc").onclick=()=>{$("allBcConfirm").hidden=false};
 $("allBcYes").onclick=()=>{
-  let n=0;for(const k of monthDays()){const d=state.days[k];if(!d||!d.jobs)continue;if(d.jobs.some(j=>!j.bc)){d.jobs.forEach(j=>j.bc=true);n++}}
+  let n=0;for(const k of monthDays()){const d=state.days[k];if(!d||!d.jobs)continue;if(d.jobs.some(j=>!j.bc)){d.jobs.forEach(j=>j.bc=true);d.u=Date.now();n++}}
   save();$("allBcConfirm").hidden=true;renderAll();toast(`Markeret på ${n} dage`);
 };
 
@@ -693,12 +748,13 @@ $("csv").onclick=()=>{
   const p=state.period;download(`Stempelur ${MONTHS[p.end.getMonth()]} ${p.end.getFullYear()}.csv`,body,"text/csv;charset=utf-8");
 };
 $("backup").onclick=()=>{
-  download(`Stempelur backup ${key(new Date())}.json`,JSON.stringify({v:1,name:state.name,norm:state.norm,saldo:state.saldo,days:state.days},null,1),"application/json");
+  download(`Stempelur backup ${key(new Date())}.json`,JSON.stringify({v:1,name:state.name,norm:state.norm,saldo:state.saldo,round:state.round||1,days:state.days},null,1),"application/json");
 };
 $("restore").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{const o=JSON.parse(await f.text());if(!o||typeof o.days!=="object")throw 0;
-    state.days={...state.days,...o.days};if(o.norm)state.norm={...DEFAULT_NORM,...o.norm};if(o.name)state.name=o.name;if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo};
+    const now=Date.now();for(const [k,d] of Object.entries(o.days)){d.u=now;delete state.tomb[k]}
+    state.days={...state.days,...o.days};state.metaU=now;if(o.norm)state.norm={...DEFAULT_NORM,...o.norm};if(o.name)state.name=o.name;if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo}; if(o.round)state.round=+o.round;
     save();state.today=state.days[key(new Date())]||null;renderNorm();fillSaldoForm();renderAll();toast(`Indlæst ${Object.keys(o.days).length} dage`)}
   catch{toast("Filen kunne ikke læses som sikkerhedskopi")}
   e.target.value="";
@@ -707,12 +763,143 @@ $("restore").onchange=async e=>{
 // ---------- settings ----------
 $("saveNorm").onclick=()=>{
   const n={};for(const wd of [1,2,3,4,5]){const v=parseFloat($("n"+wd).value.replace(",","."));n[wd]=isFinite(v)&&v>=0&&v<=24?v:0}
-  state.norm=n;state.name=$("fName").value.trim();save();renderNorm();renderAll();toast("Indstillinger gemt");
+  state.norm=n;state.name=$("fName").value.trim();state.round=+$("fRound").value||1;state.metaU=Date.now();save();renderNorm();renderAll();toast("Indstillinger gemt");
 };
 
 // ---------- ui helpers ----------
 let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200)}
 function notice(m){$("notice").textContent=m;$("notice").hidden=!m}
+
+
+// ---------- Microsoft 365-synkronisering (OneDrive) ----------
+// it kan skrive program-id og mappe-id her, så behøver kollegerne ikke taste dem selv:
+const M365={clientId:"",tenantId:""};
+const SYNC_CFG="jwi-stempelur-m365";
+const SYNC_FILE="/me/drive/root:/Stempelur/stempelur-data.json";
+const SCOPES=["User.Read","Files.ReadWrite"];
+const sync={app:null,account:null,etag:null,busy:false,again:false,timer:null,last:null,err:"",applying:false,ready:false};
+function syncCfg(){let c={};try{c=JSON.parse(localStorage.getItem(SYNC_CFG)||"{}")}catch{}return{clientId:(M365.clientId||c.clientId||"").trim(),tenantId:(M365.tenantId||c.tenantId||"").trim()}}
+function snapshot(){return{v:2,name:state.name||"",norm:state.norm,saldo:state.saldo,round:state.round||1,metaU:state.metaU||0,days:state.days,tomb:state.tomb||{}}}
+function stable(o){return JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v)}
+// newest change wins per day; on a tie the cloud copy wins, so all devices agree
+function mergeDocs(local,remote){
+  const days={},tomb={};
+  const keys=new Set([...Object.keys(local.days||{}),...Object.keys(remote.days||{}),...Object.keys(local.tomb||{}),...Object.keys(remote.tomb||{})]);
+  for(const k of keys){
+    let best=null,bu=-1;
+    for(const d of [local.days?.[k],remote.days?.[k]]){if(!d)continue;const u=d.u||0;if(u>=bu){best=d;bu=u}}
+    const t=Math.max(local.tomb?.[k]||0,remote.tomb?.[k]||0);
+    if(best&&bu>=t)days[k]=best;else if(t)tomb[k]=t;
+  }
+  const m=(remote.metaU||0)>=(local.metaU||0)?remote:local;
+  return{v:2,name:m.name||"",norm:m.norm||DEFAULT_NORM,saldo:m.saldo||DEFAULT_SALDO,round:m.round||1,metaU:Math.max(local.metaU||0,remote.metaU||0),days,tomb};
+}
+function applyDoc(doc){
+  sync.applying=true;
+  state.days=doc.days||{};state.tomb=doc.tomb||{};state.metaU=doc.metaU||0;state.name=doc.name||"";
+  state.norm={...DEFAULT_NORM,...(doc.norm||{})};state.round=+doc.round||1;state.saldo={...DEFAULT_SALDO,...(doc.saldo||{})};
+  save();sync.applying=false;
+  state.today=state.days[key(new Date())]||null;$("actions").dataset.sig="";
+  if($("dlg").hidden){renderNorm();fillSaldoForm()}
+  renderAll();
+}
+async function token(){
+  try{return (await sync.app.acquireTokenSilent({scopes:SCOPES,account:sync.account})).accessToken}
+  catch(e){const err=new Error("login");err.login=true;throw err}
+}
+async function graph(path,opt={}){
+  const t=await token();
+  return fetch("https://graph.microsoft.com/v1.0"+path,{...opt,headers:{...(opt.headers||{}),Authorization:"Bearer "+t}});
+}
+async function pull(){
+  const r=await graph(SYNC_FILE);
+  if(r.status===404){sync.etag=null;return null}
+  if(!r.ok)throw new Error("Hentning fejlede ("+r.status+")");
+  const item=await r.json();sync.etag=item.eTag;
+  const c=await fetch(item["@microsoft.graph.downloadUrl"],{cache:"no-store"});
+  if(!c.ok)throw new Error("Hentning fejlede ("+c.status+")");
+  return await c.json();
+}
+async function push(doc){
+  const h={"Content-Type":"application/json"};if(sync.etag)h["If-Match"]=sync.etag;
+  const r=await graph(SYNC_FILE+":/content",{method:"PUT",headers:h,body:JSON.stringify(doc)});
+  if(r.status===412||r.status===409)return false;
+  if(!r.ok)throw new Error("Gemning fejlede ("+r.status+")");
+  sync.etag=(await r.json()).eTag;return true;
+}
+async function syncNow(){
+  if(!sync.account)return;
+  if(sync.busy){sync.again=true;return}
+  clearTimeout(sync.timer);sync.timer=null;sync.busy=true;sync.err="";renderSync();
+  try{
+    for(let i=0;i<3;i++){
+      const remote=await pull(),local=snapshot();
+      const merged=remote?mergeDocs(local,remote):local;
+      if(stable(merged)!==stable(local))applyDoc(merged);
+      if(remote&&stable(merged)===stable(remote))break;
+      if(await push(merged))break;
+    }
+    sync.last=new Date();
+  }catch(e){sync.err=e.login?"login":(navigator.onLine===false?"Ingen internetforbindelse – prøver igen senere.":(e.message||"Ukendt fejl"))}
+  finally{sync.busy=false;renderSync();if(sync.again){sync.again=false;syncSchedule()}}
+}
+function syncSchedule(){
+  if(!sync.account)return;
+  if(sync.busy){sync.again=true;return}
+  clearTimeout(sync.timer);sync.timer=setTimeout(syncNow,1500);renderSync(true);
+}
+function renderSync(pending){
+  const cfg=syncCfg(),web=location.protocol==="https:";
+  const c=$("cloud"),txt=$("syncText");
+  $("cfgClient").value=$("cfgClient").value||cfg.clientId;$("cfgTenant").value=$("cfgTenant").value||cfg.tenantId;
+  $("syncSetup").hidden=!!M365.clientId;
+  $("syncLogin").hidden=true;$("syncNowBtn").hidden=true;$("syncLogout").hidden=true;c.hidden=true;
+  if(!web){txt.textContent="Synkronisering virker kun, når stempeluret åbnes fra webadressen (fx GitHub Pages) – ikke som fil på computeren.";return}
+  if(!cfg.clientId){txt.textContent="Synkronisering med Microsoft 365 kræver en opsætning fra it. Skriv program-id og mappe-id under Opsætning.";$("syncSetup").open=true;return}
+  if(!window.msal){txt.textContent="Kunne ikke hente Microsoft-login. Tjek internetforbindelsen og genindlæs siden.";return}
+  if(!sync.ready){txt.textContent="Forbinder til Microsoft …";return}
+  if(!sync.account||sync.err==="login"){
+    txt.textContent=sync.err==="login"?"Dit login er udløbet. Log ind igen for at synkronisere.":"Log ind med din Microsoft 365-konto, så gemmes dine registreringer i din egen OneDrive (mappen Stempelur) og er ens på telefon og pc.";
+    $("syncLogin").hidden=false;return}
+  $("syncNowBtn").hidden=false;$("syncLogout").hidden=false;c.hidden=false;
+  const who=sync.account.username||sync.account.name||"";
+  if(sync.busy){c.className="cloud busy";c.textContent="Synkroniserer …"}
+  else if(sync.err){c.className="cloud err";c.textContent="Ikke synkroniseret"}
+  else if(pending||sync.timer){c.className="cloud busy";c.textContent="Gemmer i OneDrive …"}
+  else if(sync.last){c.className="cloud ok";c.textContent="Synkroniseret "+hhmm(sync.last)}
+  else{c.className="cloud";c.textContent="OneDrive"}
+  txt.textContent=sync.err?`Fejl: ${sync.err}`:`Logget ind som ${who}. Dine registreringer gemmes i din OneDrive i mappen Stempelur.${sync.last?" Senest synkroniseret kl. "+hhmm(sync.last)+".":""}`;
+}
+async function initSync(){
+  renderSync();
+  const cfg=syncCfg();
+  if(location.protocol!=="https:"||!cfg.clientId||!window.msal)return;
+  try{
+    sync.app=new msal.PublicClientApplication({auth:{clientId:cfg.clientId,authority:"https://login.microsoftonline.com/"+(cfg.tenantId||"organizations"),
+      redirectUri:location.origin+location.pathname,postLogoutRedirectUri:location.origin+location.pathname,navigateToLoginRequestUrl:false},
+      cache:{cacheLocation:"localStorage"}});
+    if(sync.app.initialize)await sync.app.initialize();
+    const r=await sync.app.handleRedirectPromise();
+    if(r&&r.account)sync.account=r.account;
+    if(!sync.account){const a=sync.app.getAllAccounts();if(a.length)sync.account=a[0]}
+  }catch(e){sync.err=e.message||"Login fejlede"}
+  sync.ready=true;renderSync();
+  if(sync.account)syncNow();
+}
+$("syncLogin").onclick=()=>{sync.err="";sync.app?.loginRedirect({scopes:SCOPES,prompt:"select_account"})};
+$("syncNowBtn").onclick=()=>syncNow();
+$("syncLogout").onclick=async()=>{
+  const a=sync.account;sync.account=null;sync.last=null;renderSync();
+  try{await sync.app.logoutRedirect({account:a,onRedirectNavigate:()=>false})}catch{}
+  toast("Logget ud. Dine data ligger stadig på denne enhed og i OneDrive.");renderSync();
+};
+$("cfgSave").onclick=()=>{
+  try{localStorage.setItem(SYNC_CFG,JSON.stringify({clientId:$("cfgClient").value.trim(),tenantId:$("cfgTenant").value.trim()}))}catch{}
+  toast("Opsætning gemt");setTimeout(()=>location.reload(),600);
+};
+document.addEventListener("visibilitychange",()=>{if(!sync.account)return;if(document.visibilityState==="visible")syncNow();else if(sync.timer)syncNow()});
+window.addEventListener("online",()=>{if(sync.account)syncNow()});
+setInterval(()=>{if(sync.account&&document.visibilityState==="visible"&&!sync.busy)syncNow()},5*60*1000);
 
 // ---------- boot ----------
 load();
@@ -726,6 +913,7 @@ setInterval(()=>{
   renderToday();if(state.today&&state.today.ind&&!state.today.ud)renderPeriod();
 },1000);
 window.addEventListener("storage",e=>{if(e.key===STORE){load();state.today=state.days[key(new Date())]||null;renderNorm();renderAll()}});
+initSync();
 </script>
 </body>
 </html>
