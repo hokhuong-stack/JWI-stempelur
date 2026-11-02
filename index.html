@@ -168,11 +168,11 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 @media (min-width:1000px){
   body{font-size:15px}
   .wrap{max-width:1320px;display:grid;grid-template-columns:400px minmax(0,1fr);column-gap:24px;row-gap:20px;align-items:start;
-    grid-template-areas:"head head" "note note" "today per" "saldo per" "hint per" "form per" "guide per" "fill per" "set sal" "sync sal" "bak sal";
-    grid-template-rows:auto auto auto auto auto auto auto 1fr auto auto auto}
+    grid-template-areas:"head head" "note note" "today per" "saldo per" "hint per" "form per" "guide per" "fill per" "set sal" "bak sal";
+    grid-template-rows:auto auto auto auto auto auto auto 1fr auto auto}
   .wrap>*{align-self:start}
   .a-head{grid-area:head}.a-note{grid-area:note}.a-today{grid-area:today}.a-saldo{grid-area:saldo}.a-hint{grid-area:hint;margin:0!important}
-  .a-per{grid-area:per}.a-form{grid-area:form}.a-guide{grid-area:guide}.a-set{grid-area:set}.a-sal{grid-area:sal}.a-bak{grid-area:bak}.a-sync{grid-area:sync}
+  .a-per{grid-area:per}.a-form{grid-area:form}.a-guide{grid-area:guide}.a-set{grid-area:set}.a-sal{grid-area:sal}.a-bak{grid-area:bak}
   .a-per table{font-size:.95rem}
   td{padding-top:8px;padding-bottom:8px}
   th+th,td+td{padding-left:22px}
@@ -182,12 +182,6 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
   tr[data-date]:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 }
 @media (min-width:1400px){.wrap{grid-template-columns:440px minmax(0,1fr)}}
-.syncrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.cloud{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
-.cloud::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
-.cloud.ok{color:var(--plus)} .cloud.busy{color:var(--accent)} .cloud.err{color:var(--minus)}
-.setup summary{cursor:pointer;color:var(--accent);font-size:.9rem;margin-top:12px}
-.setup .sgrid{grid-template-columns:1fr}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -198,7 +192,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <div class="label">JW Industri · Tidsregistrering</div>
       <h1>Stempelur</h1>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="who" id="who"></div><span class="cloud" id="cloud" hidden></span></div>
+    <div class="who" id="who"></div>
   </header>
 
   <div class="notice a-note" id="notice" hidden></div>
@@ -299,27 +293,9 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
     <div class="row" style="margin-top:10px"><button id="saveSaldo">Gem saldi</button></div>
   </section>
 
-  <section class="card a-sync" aria-labelledby="syncTitle">
-    <h2 id="syncTitle">Synkronisering</h2>
-    <p class="muted" id="syncText" style="margin:4px 0 10px;font-size:.9rem">Log ind med din Microsoft 365-konto, så gemmes dine registreringer i din egen OneDrive og er ens på telefon og pc.</p>
-    <div class="syncrow">
-      <button id="syncLogin" class="go" hidden>Log ind med Microsoft</button>
-      <button id="syncNowBtn" hidden>Synkroniser nu</button>
-      <button id="syncLogout" class="link" hidden>Log ud</button>
-    </div>
-    <details class="setup" id="syncSetup">
-      <summary>Opsætning (fra it)</summary>
-      <div class="sgrid">
-        <label for="cfgClient">Program-id (client ID)<input id="cfgClient" class="num" autocomplete="off" placeholder="00000000-0000-0000-0000-000000000000"></label>
-        <label for="cfgTenant">Mappe-id (tenant ID)<input id="cfgTenant" class="num" autocomplete="off" placeholder="00000000-0000-0000-0000-000000000000"></label>
-      </div>
-      <div class="row" style="margin-top:10px"><button id="cfgSave">Gem opsætning</button></div>
-    </details>
-  </section>
-
   <section class="card a-bak" aria-labelledby="bakTitle">
     <h2 id="bakTitle">Sikkerhedskopi</h2>
-    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Uden synkronisering gemmes dine registreringer kun i browseren på denne enhed. Tag en kopi en gang imellem, og når du skifter telefon eller pc.</p>
+    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Dine registreringer gemmes kun i browseren på denne enhed. Tag en kopi en gang imellem, og når du skifter telefon eller pc.</p>
     <div class="row" style="margin-top:10px">
       <button id="backup">Gem sikkerhedskopi</button>
       <label class="link" for="restore" style="cursor:pointer">Indlæs sikkerhedskopi<input type="file" id="restore" accept=".json,application/json" hidden></label>
@@ -340,7 +316,6 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <li><b>Kopiér ordrer:</b> Når du retter en dag, kan du under "Kopiér ordrer fra" hente ordrerne fra en anden dag og bagefter rette timerne.</li>
         <li><b>Microsoft BC:</b> Ordrer, der mangler i BC, er orange med ○. Tryk på ordren i periodeoversigten, når du har registreret det i BC, så bliver det grønt med ✓.</li>
         <li><b>Helligdage:</b> Danske helligdage, Grundlovsdag og juleaften har normtid 0. Arbejder du på en helligdag, tæller alle timerne som plus.</li>
-        <li><b>Synkronisering:</b> Har it sat Microsoft 365 op, så tryk <b>Log ind med Microsoft</b> under Synkronisering på både telefon og pc. Så er dine registreringer ens begge steder og gemt i din OneDrive.</li>
         <li><b>Glemt at stemple:</b> Tryk på dagen i periodeoversigten, og ret tiderne.</li>
       </ul>
       <h3>Efter den 20. hver måned</h3>
@@ -396,7 +371,6 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
 <script>
 const MONTHS=["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 const DAYS=["Søn","Man","Tir","Ons","Tor","Fre","Lør"];
@@ -461,7 +435,6 @@ function load(){
 function save(){
   try{localStorage.setItem(STORE,JSON.stringify({timer:state.timer,v:2,name:state.name||"",norm:state.norm,saldo:state.saldo,round:state.round||1,metaU:state.metaU||0,days:state.days,tomb:state.tomb||{}}))}
   catch{storeOk=false;notice("Browseren tillader ikke at gemme. Brug ikke privat browsing, og åbn siden fra en webadresse.")}
-  if(!sync.applying)syncSchedule();
 }
 function setDay(k,day){
   const clean=normalize(day);const now=Date.now();
@@ -859,136 +832,6 @@ let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clear
 function notice(m){$("notice").textContent=m;$("notice").hidden=!m}
 
 
-// ---------- Microsoft 365-synkronisering (OneDrive) ----------
-// it kan skrive program-id og mappe-id her, så behøver kollegerne ikke taste dem selv:
-const M365={clientId:"",tenantId:""};
-const SYNC_CFG="jwi-stempelur-m365";
-const SYNC_FILE="/me/drive/root:/Stempelur/stempelur-data.json";
-const SCOPES=["User.Read","Files.ReadWrite"];
-const sync={app:null,account:null,etag:null,busy:false,again:false,timer:null,last:null,err:"",applying:false,ready:false};
-function syncCfg(){let c={};try{c=JSON.parse(localStorage.getItem(SYNC_CFG)||"{}")}catch{}return{clientId:(M365.clientId||c.clientId||"").trim(),tenantId:(M365.tenantId||c.tenantId||"").trim()}}
-function snapshot(){return{v:2,name:state.name||"",norm:state.norm,saldo:state.saldo,round:state.round||1,metaU:state.metaU||0,days:state.days,tomb:state.tomb||{}}}
-function stable(o){return JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v)}
-// newest change wins per day; on a tie the cloud copy wins, so all devices agree
-function mergeDocs(local,remote){
-  const days={},tomb={};
-  const keys=new Set([...Object.keys(local.days||{}),...Object.keys(remote.days||{}),...Object.keys(local.tomb||{}),...Object.keys(remote.tomb||{})]);
-  for(const k of keys){
-    let best=null,bu=-1;
-    for(const d of [local.days?.[k],remote.days?.[k]]){if(!d)continue;const u=d.u||0;if(u>=bu){best=d;bu=u}}
-    const t=Math.max(local.tomb?.[k]||0,remote.tomb?.[k]||0);
-    if(best&&bu>=t)days[k]=best;else if(t)tomb[k]=t;
-  }
-  const m=(remote.metaU||0)>=(local.metaU||0)?remote:local;
-  return{v:2,name:m.name||"",norm:m.norm||DEFAULT_NORM,saldo:m.saldo||DEFAULT_SALDO,round:m.round||1,metaU:Math.max(local.metaU||0,remote.metaU||0),days,tomb};
-}
-function applyDoc(doc){
-  sync.applying=true;
-  state.days=doc.days||{};state.tomb=doc.tomb||{};state.metaU=doc.metaU||0;state.name=doc.name||"";
-  state.norm={...DEFAULT_NORM,...(doc.norm||{})};state.round=+doc.round||1;state.saldo={...DEFAULT_SALDO,...(doc.saldo||{})};
-  save();sync.applying=false;
-  state.today=state.days[key(new Date())]||null;$("actions").dataset.sig="";
-  if($("dlg").hidden){renderNorm();fillSaldoForm()}
-  renderAll();
-}
-async function token(){
-  try{return (await sync.app.acquireTokenSilent({scopes:SCOPES,account:sync.account})).accessToken}
-  catch(e){const err=new Error("login");err.login=true;throw err}
-}
-async function graph(path,opt={}){
-  const t=await token();
-  return fetch("https://graph.microsoft.com/v1.0"+path,{...opt,headers:{...(opt.headers||{}),Authorization:"Bearer "+t}});
-}
-async function pull(){
-  const r=await graph(SYNC_FILE);
-  if(r.status===404){sync.etag=null;return null}
-  if(!r.ok)throw new Error("Hentning fejlede ("+r.status+")");
-  const item=await r.json();sync.etag=item.eTag;
-  const c=await fetch(item["@microsoft.graph.downloadUrl"],{cache:"no-store"});
-  if(!c.ok)throw new Error("Hentning fejlede ("+c.status+")");
-  return await c.json();
-}
-async function push(doc){
-  const h={"Content-Type":"application/json"};if(sync.etag)h["If-Match"]=sync.etag;
-  const r=await graph(SYNC_FILE+":/content",{method:"PUT",headers:h,body:JSON.stringify(doc)});
-  if(r.status===412||r.status===409)return false;
-  if(!r.ok)throw new Error("Gemning fejlede ("+r.status+")");
-  sync.etag=(await r.json()).eTag;return true;
-}
-async function syncNow(){
-  if(!sync.account)return;
-  if(sync.busy){sync.again=true;return}
-  clearTimeout(sync.timer);sync.timer=null;sync.busy=true;sync.err="";renderSync();
-  try{
-    for(let i=0;i<3;i++){
-      const remote=await pull(),local=snapshot();
-      const merged=remote?mergeDocs(local,remote):local;
-      if(stable(merged)!==stable(local))applyDoc(merged);
-      if(remote&&stable(merged)===stable(remote))break;
-      if(await push(merged))break;
-    }
-    sync.last=new Date();
-  }catch(e){sync.err=e.login?"login":(navigator.onLine===false?"Ingen internetforbindelse – prøver igen senere.":(e.message||"Ukendt fejl"))}
-  finally{sync.busy=false;renderSync();if(sync.again){sync.again=false;syncSchedule()}}
-}
-function syncSchedule(){
-  if(!sync.account)return;
-  if(sync.busy){sync.again=true;return}
-  clearTimeout(sync.timer);sync.timer=setTimeout(syncNow,1500);renderSync(true);
-}
-function renderSync(pending){
-  const cfg=syncCfg(),web=location.protocol==="https:";
-  const c=$("cloud"),txt=$("syncText");
-  $("cfgClient").value=$("cfgClient").value||cfg.clientId;$("cfgTenant").value=$("cfgTenant").value||cfg.tenantId;
-  $("syncSetup").hidden=!!M365.clientId;
-  $("syncLogin").hidden=true;$("syncNowBtn").hidden=true;$("syncLogout").hidden=true;c.hidden=true;
-  if(!web){txt.textContent="Synkronisering virker kun, når stempeluret åbnes fra webadressen (fx GitHub Pages) – ikke som fil på computeren.";return}
-  if(!cfg.clientId){txt.textContent="Synkronisering med Microsoft 365 kræver en opsætning fra it. Skriv program-id og mappe-id under Opsætning.";$("syncSetup").open=true;return}
-  if(!window.msal){txt.textContent="Kunne ikke hente Microsoft-login. Tjek internetforbindelsen og genindlæs siden.";return}
-  if(!sync.ready){txt.textContent="Forbinder til Microsoft …";return}
-  if(!sync.account||sync.err==="login"){
-    txt.textContent=sync.err==="login"?"Dit login er udløbet. Log ind igen for at synkronisere.":"Log ind med din Microsoft 365-konto, så gemmes dine registreringer i din egen OneDrive (mappen Stempelur) og er ens på telefon og pc.";
-    $("syncLogin").hidden=false;return}
-  $("syncNowBtn").hidden=false;$("syncLogout").hidden=false;c.hidden=false;
-  const who=sync.account.username||sync.account.name||"";
-  if(sync.busy){c.className="cloud busy";c.textContent="Synkroniserer …"}
-  else if(sync.err){c.className="cloud err";c.textContent="Ikke synkroniseret"}
-  else if(pending||sync.timer){c.className="cloud busy";c.textContent="Gemmer i OneDrive …"}
-  else if(sync.last){c.className="cloud ok";c.textContent="Synkroniseret "+hhmm(sync.last)}
-  else{c.className="cloud";c.textContent="OneDrive"}
-  txt.textContent=sync.err?`Fejl: ${sync.err}`:`Logget ind som ${who}. Dine registreringer gemmes i din OneDrive i mappen Stempelur.${sync.last?" Senest synkroniseret kl. "+hhmm(sync.last)+".":""}`;
-}
-async function initSync(){
-  renderSync();
-  const cfg=syncCfg();
-  if(location.protocol!=="https:"||!cfg.clientId||!window.msal)return;
-  try{
-    sync.app=new msal.PublicClientApplication({auth:{clientId:cfg.clientId,authority:"https://login.microsoftonline.com/"+(cfg.tenantId||"organizations"),
-      redirectUri:location.origin+location.pathname,postLogoutRedirectUri:location.origin+location.pathname,navigateToLoginRequestUrl:false},
-      cache:{cacheLocation:"localStorage"}});
-    if(sync.app.initialize)await sync.app.initialize();
-    const r=await sync.app.handleRedirectPromise();
-    if(r&&r.account)sync.account=r.account;
-    if(!sync.account){const a=sync.app.getAllAccounts();if(a.length)sync.account=a[0]}
-  }catch(e){sync.err=e.message||"Login fejlede"}
-  sync.ready=true;renderSync();
-  if(sync.account)syncNow();
-}
-$("syncLogin").onclick=()=>{sync.err="";sync.app?.loginRedirect({scopes:SCOPES,prompt:"select_account"})};
-$("syncNowBtn").onclick=()=>syncNow();
-$("syncLogout").onclick=async()=>{
-  const a=sync.account;sync.account=null;sync.last=null;renderSync();
-  try{await sync.app.logoutRedirect({account:a,onRedirectNavigate:()=>false})}catch{}
-  toast("Logget ud. Dine data ligger stadig på denne enhed og i OneDrive.");renderSync();
-};
-$("cfgSave").onclick=()=>{
-  try{localStorage.setItem(SYNC_CFG,JSON.stringify({clientId:$("cfgClient").value.trim(),tenantId:$("cfgTenant").value.trim()}))}catch{}
-  toast("Opsætning gemt");setTimeout(()=>location.reload(),600);
-};
-document.addEventListener("visibilitychange",()=>{if(!sync.account)return;if(document.visibilityState==="visible")syncNow();else if(sync.timer)syncNow()});
-window.addEventListener("online",()=>{if(sync.account)syncNow()});
-setInterval(()=>{if(sync.account&&document.visibilityState==="visible"&&!sync.busy)syncNow()},5*60*1000);
-
 // ---------- boot ----------
 load();
 state.today=state.days[key(new Date())]||null;
@@ -1001,7 +844,6 @@ setInterval(()=>{
   renderToday();if(state.today&&state.today.ind&&!state.today.ud)renderPeriod();
 },1000);
 window.addEventListener("storage",e=>{if(e.key===STORE){load();state.today=state.days[key(new Date())]||null;renderNorm();renderAll()}});
-initSync();
 </script>
 </body>
 </html>
