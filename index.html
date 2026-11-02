@@ -187,6 +187,18 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
   tr[data-date]:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 }
 @media (min-width:1400px){.wrap{grid-template-columns:440px minmax(0,1fr)}}
+/* phones: no overlapping form fields (iOS gives date/time inputs a fixed native width) */
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;width:100%;display:block;min-height:40px;line-height:1.2}
+input::-webkit-date-and-time-value{text-align:left}
+.sgrid{align-items:end}
+.sgrid label,.grid2 label{min-width:0}
+@media (max-width:560px){.a-sal .sgrid,.sgrid{grid-template-columns:1fr}}
+@media (max-width:420px){
+  .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px;gap:6px}
+  .jrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 60px 40px;gap:6px}
+  .prow label,.jrow label,.prow>*,.jrow>*{min-width:0}
+  .sheet input,.sheet select{min-width:0;max-width:100%}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
