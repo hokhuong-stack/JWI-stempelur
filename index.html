@@ -134,6 +134,18 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 .saldo small{color:var(--muted);font-size:.75rem}
 .sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
 .sgrid label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.jp.copy{cursor:copy;text-decoration:underline dotted;text-underline-offset:3px}
+.today-orders{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:6px}
+.to-row{display:grid;grid-template-columns:40px minmax(0,auto) minmax(0,auto) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.9rem}
+.to-row .tbtn{width:40px;height:36px;padding:0;border-radius:8px;font-size:1rem;line-height:1}
+.to-row .tbtn.run{background:var(--plus);border-color:var(--plus);color:var(--surface)}
+.to-row .nr,.to-row .po,.to-row .h{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.to-row .po{color:var(--accent)}
+.to-row .d{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.to-row .h{text-align:right;white-space:nowrap}
+.to-row .h .live{color:var(--plus);font-weight:600}
+.copyday{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:8px}
+.copyday select{flex:1;min-width:0}
 .jobsum{margin:14px 0 0;display:flex;flex-direction:column;gap:0}
 .jobsum div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
 .jobsum .n small{display:block;font-family:var(--body);font-weight:400;color:var(--muted);font-size:.8rem}
@@ -208,6 +220,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <div><span class="label">Norm</span><span class="v" id="sNorm">0,00</span></div>
       <div><span class="label">+/- i dag</span><span class="v" id="sDiff">0,00</span></div>
     </div>
+    <div class="today-orders" id="todayOrders" hidden></div>
     <div class="chips" id="absChips" aria-label="Fravær i dag"></div>
     <div class="row" style="margin-top:8px"><button class="link" id="editToday">Ret tider og ordrer i dag</button></div>
   </section>
@@ -322,6 +335,9 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <li><b>Går hjem:</b> Tryk <b>Stempl ud</b>. Kommer du til at trykke for tidligt, så tryk <b>Fortryd udstempling</b>.</li>
         <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie og feriefridage trækkes fra feriesaldoen, afspadsering fra flexsaldoen.</li>
         <li><b>Ordrer:</b> Tryk <b>Ret tider og ordrer i dag</b> og <b>+ Tilføj ordre</b>. Skriv ordre nr., evt. PO nr. og timer. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; PO nr. og beskrivelse huskes til næste gang, du bruger samme ordre nr.</li>
+        <li><b>PO nr.:</b> Tryk på et PO nr. for at kopiere det, fx til BC.</li>
+        <li><b>Tæller pr. ordre:</b> Under "I dag" står dagens ordrer. Tryk ▶ for at starte en tæller og ■ for at stoppe – tiden lægges til ordren. Starter du en ny, stopper den forrige. Den stopper også, når du stempler ud.</li>
+        <li><b>Kopiér ordrer:</b> Når du retter en dag, kan du under "Kopiér ordrer fra" hente ordrerne fra en anden dag og bagefter rette timerne.</li>
         <li><b>Microsoft BC:</b> Ordrer, der mangler i BC, er orange med ○. Tryk på ordren i periodeoversigten, når du har registreret det i BC, så bliver det grønt med ✓.</li>
         <li><b>Helligdage:</b> Danske helligdage, Grundlovsdag og juleaften har normtid 0. Arbejder du på en helligdag, tæller alle timerne som plus.</li>
         <li><b>Synkronisering:</b> Har it sat Microsoft 365 op, så tryk <b>Log ind med Microsoft</b> under Synkronisering på både telefon og pc. Så er dine registreringer ens begge steder og gemt i din OneDrive.</li>
@@ -355,6 +371,11 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
       <div class="label" style="margin-bottom:6px">Ordrer</div>
       <div id="jList" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="row" style="justify-content:space-between"><button type="button" class="link" id="addJ">+ Tilføj ordre</button><span class="muted alloc" id="alloc"></span></div>
+      <div class="copyday" id="copyDay" hidden>
+        <label class="field" for="copyFrom" style="flex:1;min-width:0">Kopiér ordrer fra
+          <select id="copyFrom"></select></label>
+        <button type="button" id="copyBtn">Kopiér</button>
+      </div>
       <datalist id="jobOpts"></datalist>
     </div>
     <label class="field" for="fAbs">Fravær
@@ -385,7 +406,7 @@ const DEFAULT_NORM={1:8,2:8,3:8,4:8,5:5};
 const $=id=>document.getElementById(id);
 
 const DEFAULT_SALDO={start:"",flex:0,ferie:0,optj:2.08,ffri:0};
-const state={round:1,tomb:{},metaU:0,saldo:{...DEFAULT_SALDO},name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
+const state={timer:null,round:1,tomb:{},metaU:0,saldo:{...DEFAULT_SALDO},name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
 
 // ---------- dates & math ----------
 const pad=n=>String(n).padStart(2,"0");
@@ -434,11 +455,11 @@ const STORE="jwi-stempelur-v1";
 let storeOk=true;
 function load(){
   try{const raw=localStorage.getItem(STORE);if(!raw)return;const o=JSON.parse(raw);
-    if(o.days)state.days=o.days; if(o.norm)state.norm={...DEFAULT_NORM,...o.norm}; if(o.name)state.name=o.name; if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo}; if(o.round)state.round=+o.round; state.tomb=o.tomb||{}; state.metaU=o.metaU||0;}
+    if(o.days)state.days=o.days; state.timer=o.timer||null; if(o.norm)state.norm={...DEFAULT_NORM,...o.norm}; if(o.name)state.name=o.name; if(o.saldo)state.saldo={...DEFAULT_SALDO,...o.saldo}; if(o.round)state.round=+o.round; state.tomb=o.tomb||{}; state.metaU=o.metaU||0;}
   catch{storeOk=false}
 }
 function save(){
-  try{localStorage.setItem(STORE,JSON.stringify({v:2,name:state.name||"",norm:state.norm,saldo:state.saldo,round:state.round||1,metaU:state.metaU||0,days:state.days,tomb:state.tomb||{}}))}
+  try{localStorage.setItem(STORE,JSON.stringify({timer:state.timer,v:2,name:state.name||"",norm:state.norm,saldo:state.saldo,round:state.round||1,metaU:state.metaU||0,days:state.days,tomb:state.tomb||{}}))}
   catch{storeOk=false;notice("Browseren tillader ikke at gemme. Brug ikke privat browsing, og åbn siden fra en webadresse.")}
   if(!sync.applying)syncSchedule();
 }
@@ -462,7 +483,56 @@ const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 const parseH=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)&&n>=0?n:0};
 const jobKey=j=>[j.nr||"",j.po||"",j.nr||j.po?"":(j.b||"")].join("|");
 const jobLabel=j=>j.nr||(j.po?"PO "+j.po:"")||j.b||"Ordre";
-const jobText=(d,k)=>(d.jobs||[]).map((j,i)=>`<span class="job ${j.bc?"bc":"nobc"}" data-k="${k}" data-i="${i}" title="${j.bc?"Registreret i BC – tryk for at fjerne markering":"Ikke registreret i BC – tryk når den er registreret"}"><span class="jn">${esc(j.nr)}</span><span class="jp">${j.po?esc(j.po):""}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
+const jobText=(d,k)=>(d.jobs||[]).map((j,i)=>`<span class="job ${j.bc?"bc":"nobc"}" data-k="${k}" data-i="${i}" title="${j.bc?"Registreret i BC – tryk for at fjerne markering":"Ikke registreret i BC – tryk når den er registreret"}"><span class="jn">${esc(j.nr)}</span><span class="jp${j.po?" copy":""}"${j.po?` data-copy="${esc(j.po)}" title="Kopiér PO nr."`:""}>${j.po?esc(j.po):""}</span><span class="jd">${j.b?esc(j.b):""}</span><span class="jt">${fmt(j.t)} t</span></span>`).join("");
+
+// ---------- copy to clipboard ----------
+function copyText(t,msg){
+  const done=()=>toast(msg||"Kopieret");
+  const fallback=()=>{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.append(a);a.select();
+    try{document.execCommand("copy");done()}catch{toast("Kunne ikke kopiere")}a.remove()};
+  try{navigator.clipboard.writeText(t).then(done,fallback)}catch{fallback()}
+}
+
+// ---------- order timer (start/stop on a single order today) ----------
+function timerMinutes(){return state.timer?Math.max(0,(Date.now()-state.timer.start)/60000):0}
+function addTimerTime(d){ // adds the running time to the order in day object d
+  const tm=state.timer;if(!tm||!d.jobs||!d.jobs[tm.i])return 0;
+  const step=Number(state.round)||1;const mins=Math.round(timerMinutes()/step)*step;
+  d.jobs[tm.i].t=Math.round(((Number(d.jobs[tm.i].t)||0)+mins/60)*100)/100;
+  return mins;
+}
+function toggleTimer(i){
+  const k=key(new Date());const d=structuredClone(state.today||{});
+  if(!d.jobs||!d.jobs[i])return;
+  const running=state.timer&&state.timer.k===k;
+  let msg="";
+  if(running){const mins=addTimerTime(d);const was=state.timer.i;state.timer=null;msg=`${jobLabel(d.jobs[was])}: +${fmt(mins/60)} t`;
+    if(was===i){setDay(k,d);toast(msg);return}}
+  if(state.timer&&state.timer.k!==k)state.timer=null; // a forgotten timer from another day is dropped
+  state.timer={k,i,start:Date.now()};
+  setDay(k,d);toast((msg?msg+" · ":"")+`Tæller startet på ${jobLabel(d.jobs[i])}`);
+}
+function renderTodayOrders(){
+  const k=key(new Date()),d=state.today||{},box=$("todayOrders");
+  const jobs=d.jobs||[];box.hidden=!jobs.length;if(!jobs.length)return;
+  const run=state.timer&&state.timer.k===k?state.timer.i:-1;
+  const sig=JSON.stringify([jobs.map(j=>[j.nr,j.po,j.b,j.t]),run]);
+  if(box.dataset.sig!==sig){
+    box.dataset.sig=sig;
+    box.innerHTML=`<div class="label">Ordrer i dag · tryk ▶ for at tælle tid, tryk på PO nr. for at kopiere</div>`+jobs.map((j,i)=>`<div class="to-row">
+      <button class="tbtn${i===run?" run":""}" data-timer="${i}" aria-label="${i===run?"Stop tæller":"Start tæller"} på ${esc(jobLabel(j))}">${i===run?"■":"▶"}</button>
+      <span class="nr">${esc(j.nr||"")}</span>
+      <span class="po${j.po?" copy jp":""}"${j.po?` data-copy="${esc(j.po)}" title="Kopiér PO nr."`:""}>${esc(j.po||"")}</span>
+      <span class="d">${esc(j.b||"")}</span>
+      <span class="h" data-h="${i}"></span></div>`).join("");
+  }
+  box.querySelectorAll("[data-h]").forEach(el=>{const i=+el.dataset.h,j=jobs[i];
+    el.innerHTML=i===run?`${fmt(j.t)} t <span class="live">+${pad(Math.floor(timerMinutes()/60))}:${pad(Math.floor(timerMinutes()%60))}</span>`:`${fmt(j.t)} t`});
+}
+$("todayOrders").addEventListener("click",e=>{
+  const b=e.target.closest("[data-timer]");if(b){toggleTimer(+b.dataset.timer);return}
+  const cp=e.target.closest("[data-copy]");if(cp)copyText(cp.dataset.copy,`PO ${cp.dataset.copy} kopieret`);
+});
 
 // ---------- stamping ----------
 // stempling afrundes til nærmeste 1, 5 eller 10 minutter (Indstillinger)
@@ -479,6 +549,7 @@ function stamp(action){
   if(action==="in"){d.ind=t;delete d.ud}
   if(action==="pStart"){d.pauser.push({fra:t})}
   if(action==="pEnd"){const p=d.pauser.find(x=>!x.til);if(p)p.til=t}
+  if(action==="out"&&state.timer&&state.timer.k===k){addTimerTime(d);state.timer=null}
   if(action==="out"){const p=d.pauser.find(x=>!x.til);if(p)p.til=t;d.ud=t}
   if(action==="reopen"){delete d.ud}
   setDay(k,d);
@@ -491,6 +562,7 @@ function setAbs(v){
 
 // ---------- render ----------
 function renderToday(){
+  renderTodayOrders();
   const now=new Date(),k=key(now),d=state.today||{};
   $("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   $("todayDate").textContent=`${DAYS_LONG[now.getDay()]} ${now.getDate()}. ${MONTHS[now.getMonth()]} ${now.getFullYear()}${holidayName(k)?" · "+holidayName(k):""}`;
@@ -645,13 +717,24 @@ function fillJobOpts(){
   for(const k of Object.keys(state.days).sort().reverse())for(const j of state.days[k].jobs||[])if(j.nr&&!seen.has(j.nr))seen.set(j.nr,1);
   $("jobOpts").innerHTML=[...seen.keys()].slice(0,30).map(n=>`<option value="${esc(n)}">`).join("");
 }
+function fillCopyFrom(k){
+  const opts=Object.keys(state.days).filter(x=>x!==k&&(state.days[x].jobs||[]).length).sort().reverse().slice(0,30);
+  $("copyDay").hidden=!opts.length;
+  $("copyFrom").innerHTML=opts.map(x=>{const dt=parseKey(x),n=state.days[x].jobs.length;
+    return `<option value="${x}">${DAYS[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1} – ${n} ${n===1?"ordre":"ordrer"} (${fmt(state.days[x].jobs.reduce((a,j)=>a+(Number(j.t)||0),0))} t)</option>`}).join("");
+}
+$("copyBtn").onclick=()=>{
+  const src=state.days[$("copyFrom").value];if(!src||!src.jobs)return;
+  for(const j of src.jobs)jRow({nr:j.nr||"",po:j.po||"",b:j.b||"",t:j.t});
+  updAlloc();toast(`${src.jobs.length} ${src.jobs.length===1?"ordre":"ordrer"} kopieret – ret timerne og tryk Gem`);
+};
 function openDay(k){
   if(!state.uid){toast("Log ind for at rette tider");return}
   state.editing=k;const d=state.days[k]||(k===key(new Date())?state.today:null)||{};const dt=parseKey(k);
   $("dlgTitle").textContent=`${DAYS_LONG[dt.getDay()]} ${dt.getDate()}. ${MONTHS[dt.getMonth()]}`;
   $("fIn").value=d.ind||"";$("fOut").value=d.ud||"";$("fAbs").value=d.fravaer||"";$("fNote").value=d.note||"";
   $("pList").replaceChildren();(d.pauser||[]).forEach(pRow);$("confirmDel").hidden=true;
-  $("jList").replaceChildren();fillJobOpts();(d.jobs||[]).forEach(jRow);updAlloc();
+  $("jList").replaceChildren();fillJobOpts();fillCopyFrom(k);(d.jobs||[]).forEach(jRow);updAlloc();
   $("unsaved").hidden=true;$("dlg").hidden=false;state.dlgSnap=formSnap();$("fIn").focus();
 }
 function closeDlg(){$("dlg").hidden=true;$("unsaved").hidden=true;state.editing=null}
@@ -679,11 +762,16 @@ $("dlgForm").addEventListener("submit",e=>{
   const inM=toMin($("fIn").value),outM=toMin($("fOut").value);
   if(inM!=null&&outM!=null&&outM<=inM){toast("Gået hjem skal være efter mødt ind");return}
   const jobs=[...$("jList").children].map(r=>{const q=c=>r.querySelector(c);const cb=q("input[type=checkbox]");return{nr:q(".j-nr").value,po:q(".j-po").value,t:parseH(q(".j-t").value),b:q(".j-b").value,bc:cb&&cb.checked}}).filter(j=>[j.nr,j.po,j.b].some(v=>v&&v.trim()));
+  if(state.timer&&state.timer.k===state.editing){const old=(state.days[state.editing]||{}).jobs||[];const o=old[state.timer.i];
+    const ni=o?jobs.findIndex(j=>j.nr.trim()===(o.nr||"")&&(j.po||"").trim()===(o.po||"")&&(j.b||"").trim()===(o.b||"")):-1;
+    if(ni<0)state.timer=null;else state.timer.i=ni}
   setDay(state.editing,{ind:$("fIn").value,ud:$("fOut").value,pauser,jobs,fravaer:$("fAbs").value,note:$("fNote").value.trim()});
   toast("Gemt");closeDlg();
 });
 $("editToday").onclick=()=>openDay(key(new Date()));
 $("rows").addEventListener("click",e=>{
+  const cp=e.target.closest("[data-copy]");
+  if(cp){copyText(cp.dataset.copy,`PO ${cp.dataset.copy} kopieret`);return}
   const jb=e.target.closest(".job[data-k]");
   if(jb){const k=jb.dataset.k,i=+jb.dataset.i;const d=structuredClone(state.days[k]||{});if(d.jobs&&d.jobs[i]){d.jobs[i].bc=!d.jobs[i].bc;setDay(k,d);toast(d.jobs[i].bc?`${jobLabel(d.jobs[i])} markeret som registreret i BC`:`${jobLabel(d.jobs[i])} ikke registreret i BC`)}return}
   const tr=e.target.closest("tr[data-date]");if(tr)openDay(tr.dataset.date)});
