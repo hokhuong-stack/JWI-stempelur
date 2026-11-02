@@ -128,7 +128,11 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 .legend .bc{color:var(--plus)} .legend .nobc{color:var(--warn)}
 .jobs .jd{overflow-wrap:anywhere}
 .jobs .jt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.saldo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.saldo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.saldo div.warn{border-color:var(--warn)}.saldo div.warn .v,.saldo div.warn small{color:var(--warn)}
+.saldo div.over{border-color:var(--minus)}.saldo div.over .v,.saldo div.over small{color:var(--minus)}
+@media (max-width:560px){.saldo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fsub{font-size:.8rem;color:var(--muted);margin:14px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .saldo div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .saldo .v{font-family:var(--mono);font-size:1.3rem;font-weight:600;font-variant-numeric:tabular-nums}
 .saldo small{color:var(--muted);font-size:.75rem}
@@ -173,6 +177,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
   .wrap>*{align-self:start}
   .a-head{grid-area:head}.a-note{grid-area:note}.a-today{grid-area:today}.a-saldo{grid-area:saldo}.a-hint{grid-area:hint;margin:0!important}
   .a-per{grid-area:per}.a-form{grid-area:form}.a-guide{grid-area:guide}.a-set{grid-area:set}.a-sal{grid-area:sal}.a-bak{grid-area:bak}
+  .wrap .a-saldo{grid-template-columns:repeat(2,minmax(0,1fr))}
   .a-per table{font-size:.95rem}
   td{padding-top:8px;padding-bottom:8px}
   th+th,td+td{padding-left:22px}
@@ -221,8 +226,9 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 
   <section class="saldo a-saldo" aria-label="Saldi i dag">
     <div><span class="label">Flexsaldo</span><span class="v" id="balFlex">0,00</span><small>timer</small></div>
-    <div><span class="label">Ferie</span><span class="v" id="balFerie">0,00</span><small>dage tilbage</small></div>
-    <div><span class="label">Feriefridage</span><span class="v" id="balFfri">0,00</span><small>dage tilbage</small></div>
+    <div id="balFerieBox"><span class="label" id="balFerieLbl">Ferie i år</span><span class="v" id="balFerie">0,00</span><small id="balFerieSub">dage tilbage</small></div>
+    <div><span class="label">Feriefridage</span><span class="v" id="balFfri">0,00</span><small id="balFfriSub">dage tilbage</small></div>
+    <div id="balOldBox"><span class="label">Optjening ferie saldo</span><span class="v" id="balOld">0,00</span><small id="balOldSub">til næste år</small></div>
   </section>
   <p class="muted a-hint" id="saldoHint" style="margin:-10px 0 0;font-size:.85rem" hidden>Indtast dine startsaldi under <b>Saldi</b> nederst, så regner stempeluret videre derfra.</p>
 
@@ -282,14 +288,22 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 
   <section class="card a-sal" aria-labelledby="salTitle">
     <h2 id="salTitle">Saldi</h2>
-    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Skriv dine saldi, som de stod ved startdatoen (fx fra Timeregnskab). Stempeluret regner videre med dine registreringer fra og med startdatoen. Ferieoptjening lægges til den 1. i hver måned efter startdatoen.</p>
+    <p class="muted" style="margin:4px 0 0;font-size:.9rem">Skriv dine saldi, som de stod ved udgangen af datoen (fx fra lønsedlen). Stempeluret regner videre med det, du registrerer bagefter.</p>
+    <div class="fsub">Flex</div>
     <div class="sgrid">
-      <label for="sDate">Startdato<input type="date" id="sDate"></label>
+      <label for="sDate">Saldo pr. dato<input type="date" id="sDate"></label>
       <label for="sFlex">Flexsaldo (timer)<input id="sFlex" class="num" inputmode="decimal" placeholder="0,00"></label>
-      <label for="sFerie">Ferie (dage)<input id="sFerie" class="num" inputmode="decimal" placeholder="0,00"></label>
-      <label for="sOptj">Optjening pr. md. (dage)<input id="sOptj" class="num" inputmode="decimal" placeholder="2,08"></label>
-      <label for="sFfri">Feriefridage (dage)<input id="sFfri" class="num" inputmode="decimal" placeholder="0,00"></label>
     </div>
+    <div class="fsub">Ferie · ferieår 1. september – 31. august</div>
+    <div class="sgrid">
+      <label for="fDate">Saldo pr. dato<input type="date" id="fDate"></label>
+      <label for="fOld">Ferie i år (dage)<input id="fOld" class="num" inputmode="decimal" placeholder="0,00"></label>
+      <label for="fNew">Optjening ferie saldo, til næste år (dage)<input id="fNew" class="num" inputmode="decimal" placeholder="beregnes"></label>
+      <label for="sFfri">Feriefridage tilbage<input id="sFfri" class="num" inputmode="decimal" placeholder="5"></label>
+      <label for="sOptj">Optjening pr. md. (dage)<input id="sOptj" class="num" inputmode="decimal" placeholder="2,08"></label>
+      <label for="fFfriYr">Feriefridage pr. ferieår<input id="fFfriYr" class="num" inputmode="decimal" placeholder="5"></label>
+    </div>
+    <p class="muted" style="margin:8px 0 0;font-size:.8rem"><b>Ferie i år</b> er de dage, du har nu, og som skal holdes inden 31. december. <b>Optjening ferie saldo</b> er det, du optjener til næste år: 2,08 dage den 1. i hver måned fra 1. september – lader du feltet stå tomt, beregnes det ud fra datoen. Feriedage trækkes først fra Ferie i år. Den 1. september bliver optjeningen til næste års "Ferie i år", og feriefridage sættes til det fulde antal.</p>
     <div class="row" style="margin-top:10px"><button id="saveSaldo">Gem saldi</button></div>
   </section>
 
@@ -309,7 +323,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
         <li><b>Møder ind:</b> Tryk <b>Stempl ind</b>. Tiden afrundes til nærmeste 1, 5 eller 10 minutter, som du vælger under Indstillinger.</li>
         <li><b>Pause:</b> Tryk <b>Start pause</b> og <b>Slut pause</b>. Du kan holde flere pauser.</li>
         <li><b>Går hjem:</b> Tryk <b>Stempl ud</b>. Kommer du til at trykke for tidligt, så tryk <b>Fortryd udstempling</b>.</li>
-        <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie og feriefridage trækkes fra feriesaldoen, afspadsering fra flexsaldoen.</li>
+        <li><b>Fravær:</b> Tryk <b>Ferie</b>, <b>Feriefridag</b>, <b>Syg</b>, <b>Afspadsering</b> eller <b>Fri</b>. Ferie trækkes først fra "Ferie i år" (frist 31/12), derefter fra optjeningen til næste år. Feriefridage nulstilles 1/9. Afspadsering trækkes fra flexsaldoen.</li>
         <li><b>Ordrer:</b> Tryk <b>Ret tider og ordrer i dag</b> og <b>+ Tilføj ordre</b>. Skriv ordre nr., evt. PO nr. og timer. Timerne foreslås ud fra det, der ikke er fordelt endnu. Du kan skrive en beskrivelse; PO nr. og beskrivelse huskes til næste gang, du bruger samme ordre nr.</li>
         <li><b>PO nr.:</b> Tryk på et PO nr. for at kopiere det, fx til BC.</li>
         <li><b>Tæller pr. ordre:</b> Under "I dag" står dagens ordrer. Tryk ▶ for at starte en tæller og ■ for at stoppe – tiden lægges til ordren. Starter du en ny, stopper den forrige. Den stopper også, når du stempler ud.</li>
@@ -379,7 +393,7 @@ const ABS=["Ferie","Feriefridag","Syg","Afspadsering","Fri"];
 const DEFAULT_NORM={1:8,2:8,3:8,4:8,5:5};
 const $=id=>document.getElementById(id);
 
-const DEFAULT_SALDO={start:"",flex:0,ferie:0,optj:2.08,ffri:0};
+const DEFAULT_SALDO={start:"",flex:0,ferie:0,optj:2.08,ffri:0,fdate:"",fold:0,fnew:null,ffriYr:5};
 const state={timer:null,round:1,tomb:{},metaU:0,saldo:{...DEFAULT_SALDO},name:"",uid:"local",days:{},today:null,norm:{...DEFAULT_NORM},canWrite:true,period:null,unsubPeriod:null,editing:null};
 
 // ---------- dates & math ----------
@@ -620,6 +634,38 @@ function dayLeave(k,d,type){ // days of leave used
   if(d.fravaer!==type)return 0;const c=calc(k,d);
   return c.norm>0?(c.abs||0)/c.norm:0;
 }
+// ---------- ferieår (1/9 – 31/8): overført + i år, FIFO, frist 31/12 året efter ----------
+const fyOf=k=>{const [y,m]=k.split("-").map(Number);return m>=9?y:y-1};          // ferieår = startår
+function monthStartsBetween(aKey,bKey){ // 1st-of-month dates d with aKey < d <= bKey
+  const out=[];let [y,m]=aKey.split("-").map(Number);
+  for(;;){m++;if(m>12){m=1;y++}const k=`${y}-${pad(m)}-01`;if(k>bKey)break;out.push(k)}return out}
+function ferieBalances(uptoKey){
+  const sd=state.saldo;if(!sd.fdate)return null;
+  const R=sd.fdate,optj=Number(sd.optj)||0,fy0=fyOf(R);
+  const b={};b[fy0-1]=Number(sd.fold)||0;
+  if(sd.fnew===null||sd.fnew===undefined||sd.fnew===""){const st=`${fy0}-09-01`;b[fy0]=optj*(1+monthStartsBetween(st,R).length)}
+  else b[fy0]=Number(sd.fnew)||0;
+  const base0=b[fy0];let acc=0;
+  let ffri=Number(sd.ffri)||0,ffriFy=fy0;const ffriYr=Number(sd.ffriYr)||0;
+  const ev=[];
+  for(const k of monthStartsBetween(R,uptoKey))ev.push([k,"acc"]);
+  for(const k of Object.keys(state.days))if(k>R&&k<=uptoKey){const d=state.days[k];
+    if(d.fravaer==="Ferie")ev.push([k,"fer",dayLeave(k,d,"Ferie")]);
+    if(d.fravaer==="Feriefridag")ev.push([k,"ffri",dayLeave(k,d,"Feriefridag")])}
+  ev.sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:(x[1]==="acc"?-1:1));
+  for(const [k,t,v] of ev){
+    const fy=fyOf(k);
+    if(t==="acc"){b[fy]=(b[fy]||0)+optj;if(fy===fyOf(uptoKey))acc+=optj;if(k.endsWith("-09-01")&&fy>ffriFy){ffri=ffriYr;ffriFy=fy}continue}
+    if(fy>ffriFy){ffri=ffriYr;ffriFy=fy}
+    if(t==="ffri"){ffri-=v;continue}
+    let left=v;for(const y of Object.keys(b).map(Number).sort((a,c)=>a-c)){if(left<=0)break;if(y>fy)break;const take=Math.min(left,Math.max(0,b[y]));b[y]-=take;left-=take}
+    if(left>0)b[fy]=(b[fy]||0)-left;
+  }
+  const cur=fyOf(uptoKey);if(cur>ffriFy){ffri=ffriYr}
+  const today=uptoKey;let old=0,over=0,next=null;
+  for(const y of Object.keys(b).map(Number).sort((a,c)=>a-c)){if(y<cur&&b[y]>0.004){old+=b[y];const dl=`${y+1}-12-31`;if(today>dl)over+=b[y];else if(!next)next=dl}}
+  return{now:b[cur]||0,old,over,next,ffri,base:cur===fy0?base0:0,acc,fromDate:cur===fy0?R:`${cur}-09-01`};
+}
 function balances(uptoKey){
   const sd=state.saldo,start=sd.start||"0000-00-00";
   let flex=Number(sd.flex)||0,ferie=Number(sd.ferie)||0,ffri=Number(sd.ffri)||0;
@@ -632,19 +678,37 @@ function signCls(v){return v>0.004?"plus":v<-0.004?"minus":""}
 function renderSaldo(){
   const b=balances(key(new Date()));
   $("balFlex").textContent=fmt(b.flex,true);$("balFlex").className="v "+signCls(b.flex);
-  $("balFerie").textContent=fmt(b.ferie);$("balFfri").textContent=fmt(b.ffri);
+  const fb=ferieBalances(key(new Date()));
+  if(fb){
+    $("balFerieLbl").textContent="Ferie i år";$("balFerie").textContent=fmt(fb.old);
+    $("balOldBox").hidden=false;$("balOld").textContent=fmt(fb.now);const fd=parseKey(fb.fromDate);
+    $("balOldSub").textContent=fb.base>0.004&&fb.acc>0.004?`${fmt(fb.base)} pr. ${fd.getDate()}/${fd.getMonth()+1} + ${fmt(fb.acc)} optjent siden · til næste år`:`optjent siden 1/9 ${fyOf(key(new Date()))} · til næste år`;
+    const box=$("balFerieBox");box.classList.remove("warn","over");
+    const parts=[];const today=key(new Date());
+    if(fb.over>0.004){parts.push(`${fmt(fb.over)} over fristen – aftal overførsel`);box.classList.add("over")}
+    if(fb.next){const dl=parseKey(fb.next);parts.push(`${fb.over>0.004?"resten ":""}holdes inden ${dl.getDate()}/${dl.getMonth()+1}-${dl.getFullYear()}`);
+      if(!fb.over&&today>=`${dl.getFullYear()}-11-01`)box.classList.add("warn")}
+    $("balFerieSub").textContent=parts.join(" · ")||"dage tilbage";
+    $("balFfri").textContent=fmt(fb.ffri);$("balFfriSub").textContent="tilbage i ferieåret";
+  }else{
+    $("balFerieBox").classList.remove("warn","over");$("balFerieLbl").textContent="Ferie i alt";$("balFerie").textContent=fmt(b.ferie);$("balFerieSub").textContent="del op under Saldi → Ferie";$("balOldBox").hidden=true;
+    $("balFfri").textContent=fmt(b.ffri);$("balFfriSub").textContent="dage tilbage";
+  }
   $("saldoHint").hidden=!!state.saldo.start;
   const e=state.period.end;const pe=key(new Date(e.getFullYear(),e.getMonth()+1,0));const pb=balances(pe<key(new Date())?pe:key(new Date()));
   $("perFlex").textContent=state.saldo.start?`Flexsaldo ${pe<key(new Date())?"ved månedens slut":"i dag"}: ${fmt(pb.flex,true)} t`:"";
 }
 function fillSaldoForm(){
   const sd=state.saldo,f=v=>v===""||v==null?"":String(v).replace(".",",");
-  $("sDate").value=sd.start||"";$("sFlex").value=f(sd.flex);$("sFerie").value=f(sd.ferie);$("sOptj").value=f(sd.optj);$("sFfri").value=f(sd.ffri);
+  $("sDate").value=sd.start||"";$("sFlex").value=f(sd.flex);$("sOptj").value=f(sd.optj);$("sFfri").value=f(sd.ffri);
+  $("fDate").value=sd.fdate||"";$("fOld").value=f(sd.fold);$("fNew").value=sd.fnew===null||sd.fnew===undefined?"":f(sd.fnew);$("fFfriYr").value=f(sd.ffriYr??5);
 }
 $("saveSaldo").onclick=()=>{
   const n=id=>{const v=parseFloat($(id).value.replace(",",".").replace("−","-"));return isFinite(v)?v:0};
-  if(!$("sDate").value){toast("Vælg en startdato");$("sDate").focus();return}
-  state.saldo={start:$("sDate").value,flex:n("sFlex"),ferie:n("sFerie"),optj:$("sOptj").value.trim()===""?2.08:n("sOptj"),ffri:n("sFfri")};
+  if(!$("sDate").value){toast("Vælg en dato for flexsaldoen");$("sDate").focus();return}
+  if(!$("fDate").value){toast("Vælg en dato for feriesaldoen");$("fDate").focus();return}
+  state.saldo={...state.saldo,start:$("sDate").value,flex:n("sFlex"),optj:$("sOptj").value.trim()===""?2.08:n("sOptj"),ffri:n("sFfri"),
+    fdate:$("fDate").value,fold:n("fOld"),fnew:$("fNew").value.trim()===""?null:n("fNew"),ffriYr:$("fFfriYr").value.trim()===""?5:n("fFfriYr")};
   state.metaU=Date.now();save();fillSaldoForm();renderAll();toast("Saldi gemt");
 };
 function renderAll(){renderToday();renderPeriod()}
