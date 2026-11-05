@@ -59,7 +59,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .stop{background:var(--fg);color:var(--bg)}
 .ghost{background:transparent}
 .link{background:none;border:none;color:var(--accent);padding:4px 0;text-decoration:underline;text-underline-offset:3px}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
 .stats div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .stats .v{font-family:var(--mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
 .plus{color:var(--plus)} .minus{color:var(--minus)}
@@ -159,7 +159,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;z-index:30}
 .unsaved{background:var(--pause-bg);color:var(--fg);border:1px solid var(--pause);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
 .notice{background:var(--pause-bg);color:var(--pause);border-radius:8px;padding:10px 12px;font-size:.9rem}
-@media (max-width:420px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.norm{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:420px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.norm{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){th:nth-child(4),td:nth-child(4){display:none}table{font-size:.86rem}td,th{padding-left:3px;padding-right:3px}}
 .guide summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .guide summary::-webkit-details-marker{display:none}
@@ -183,7 +183,7 @@ tr.jobtr td{padding-top:0;padding-bottom:8px}
   th+th,td+td{padding-left:22px}
   .jobs{font-size:.82rem;gap:2px 18px}
   .a-sal .sgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
   tr[data-date]:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 }
 @media (min-width:1400px){.wrap{grid-template-columns:440px minmax(0,1fr)}}
@@ -230,6 +230,7 @@ input::-webkit-date-and-time-value{text-align:left}
     <div class="stats">
       <div><span class="label">Arbejdet</span><span class="v" id="sWork">0,00</span></div>
       <div><span class="label">Pause</span><span class="v" id="sPause">0,00</span></div>
+      <div title="Ind + norm + pauser = klokkeslæt, hvor dagen giver 0 i flex"><span class="label">Fri kl.</span><span class="v" id="sLeave">–</span></div>
       <div><span class="label">Norm</span><span class="v" id="sNorm">0,00</span></div>
       <div><span class="label">+/- i dag</span><span class="v" id="sDiff">0,00</span></div>
     </div>
@@ -583,6 +584,9 @@ function renderToday(){
   }
   const c=calc(k,d);
   $("sWork").textContent=fmt(c.work||0);$("sPause").textContent=fmt(c.pause);$("sNorm").textContent=fmt(c.norm);
+  {const inM=toMin(d.ind);let lv="–";
+   if(inM!=null&&!d.ud&&!d.fravaer&&c.norm>0){const m=Math.min(23*60+59,Math.ceil(inM+c.norm*60+c.pause*60));lv=`${pad(Math.floor(m/60))}:${pad(m%60)}`}
+   $("sLeave").textContent=lv}
   const dv=c.diff??(c.abs!=null?0:null);
   $("sDiff").textContent=c.abs?`-${fmt(c.abs)} fr.`:fmt(dv??0,true);
   $("sDiff").className="v "+((c.diff||0)>0.004?"plus":(c.diff||0)<-0.004?"minus":"");
