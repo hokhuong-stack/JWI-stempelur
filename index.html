@@ -199,6 +199,8 @@ input::-webkit-date-and-time-value{text-align:left}
   .prow label,.jrow label,.prow>*,.jrow>*{min-width:0}
   .sheet input,.sheet select{min-width:0;max-width:100%}
 }
+.totop{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:48px;height:48px;border-radius:50%;padding:0;font-size:1.4rem;line-height:1;background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:25}
+@media (min-width:1000px){.totop{display:none!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -347,8 +349,8 @@ input::-webkit-date-and-time-value{text-align:left}
       <h3>Efter den 20. hver måned</h3>
       <ol>
         <li>Tjek periodeoversigten. Dage markeret med “mangler ud” skal rettes.</li>
-        <li>Tryk <b>Hent arbejdstidsskema (Excel)</b>. På iPhone ender filen i <b>Arkiver → Overførsler</b>.</li>
-        <li>Send filen fra Arkiver til din firmamail.</li>
+        <li>Tryk <b>Hent arbejdstidsskema (Excel)</b>. På telefonen åbner delingsmenuen: vælg <b>Mail</b>, så ligger skemaet og en sikkerhedskopi vedhæftet. Send mailen til din firmamail.</li>
+        <li>Kan telefonen ikke dele filen, bliver den hentet i stedet (iPhone: <b>Arkiver → Overførsler</b>) – send den derfra.</li>
         <li>Åbn den på firmacomputeren, underskriv på underskriftslinjen, og send den til jeres ledere.</li>
         <li>Tryk <b>Gem sikkerhedskopi</b> en gang om måneden, og gem den, fx i OneDrive eller iCloud.</li>
       </ol>
@@ -395,6 +397,7 @@ input::-webkit-date-and-time-value{text-align:left}
   </form>
 </div>
 <div class="toast" id="toast" hidden></div>
+<button type="button" class="totop" id="toTop" aria-label="Til toppen" hidden>↑</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
@@ -875,17 +878,41 @@ async function buildFormXlsx(name){
 }
 function formFileName(name){const p=state.period;const m=MONTHS[p.end.getMonth()];return `${(name||"Arbejdstid").replace(/[\\/:*?"<>|]/g,"")}_${m[0].toUpperCase()+m.slice(1)} ${p.end.getFullYear()}.xlsx`}
 
+function backupText(){return JSON.stringify({v:1,name:state.name,norm:state.norm,saldo:state.saldo,round:state.round||1,days:state.days},null,1)}
+const isPhone=()=>matchMedia("(max-width:999px)").matches&&matchMedia("(pointer:coarse)").matches;
+let pendingShare=null; // files ready to share if the first share call lost the tap
+async function shareFiles(files){
+  const p=state.period,m=MONTHS[p.end.getMonth()];
+  const data={files,title:`Arbejdstidsskema ${m} ${p.end.getFullYear()}`,text:`Arbejdstidsskema ${m} ${p.end.getFullYear()}${state.name?" – "+state.name:""}`};
+  await navigator.share(data);
+}
 $("xlsx").onclick=async()=>{
+  if(pendingShare){const f=pendingShare;pendingShare=null;$("xlsx").textContent="Hent arbejdstidsskema (Excel)";
+    try{await shareFiles(f)}catch(e){if(e&&e.name!=="AbortError")toast("Kunne ikke åbne deling")}return}
   let blob;try{blob=await buildFormXlsx(state.name)}catch{toast("Kunne ikke lave Excel-filen. Tjek internetforbindelsen.");return}
+  if(isPhone()&&navigator.canShare){
+    const xl=new File([blob],formFileName(state.name),{type:blob.type});
+    const bk=new File([backupText()],`Stempelur backup ${key(new Date())}.json`,{type:"application/json"});
+    const files=[[xl,bk],[xl]].find(f=>{try{return navigator.canShare({files:f})}catch{return false}});
+    if(files){
+      try{await shareFiles(files);if(files.length>1)toast("Skema og sikkerhedskopi delt");return}
+      catch(e){
+        if(e&&e.name==="AbortError")return;
+        if(e&&e.name==="NotAllowedError"){pendingShare=files;$("xlsx").textContent="Åbn mail med skemaet";toast("Filen er klar – tryk igen");return}
+      }
+    }
+  }
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=formFileName(state.name);
   document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
 };
+{const tb=$("toTop");const upd=()=>{tb.hidden=scrollY<500};addEventListener("scroll",upd,{passive:true});upd();
+ tb.onclick=()=>scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"})}
 $("csv").onclick=()=>{
   const body="\ufeff"+state.csv.map(r=>r.map(v=>/[;"\n]/.test(v)?`"${String(v).replace(/"/g,'""')}"`:v).join(";")).join("\r\n");
   const p=state.period;download(`Stempelur ${MONTHS[p.end.getMonth()]} ${p.end.getFullYear()}.csv`,body,"text/csv;charset=utf-8");
 };
 $("backup").onclick=()=>{
-  download(`Stempelur backup ${key(new Date())}.json`,JSON.stringify({v:1,name:state.name,norm:state.norm,saldo:state.saldo,round:state.round||1,days:state.days},null,1),"application/json");
+  download(`Stempelur backup ${key(new Date())}.json`,backupText(),"application/json");
 };
 $("restore").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
